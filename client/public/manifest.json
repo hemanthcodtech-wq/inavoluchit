@@ -1,0 +1,21 @@
+{
+  "name": "InaVolu Chit Funds Private Limited",
+  "short_name": "InaVolu Chits",
+  "description": "Government-registered and regulated chit fund management platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e6b3e",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}

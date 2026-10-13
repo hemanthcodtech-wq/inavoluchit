@@ -1,0 +1,713 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Premium Light Grey & Forest Green Theme */
+  --bg-main: #fbfcfa;          /* Soft warm cream background */
+  --bg-card: rgba(255, 255, 255, 0.95); /* Semi-transparent glass white */
+  --color-primary: #111827;     /* Dark grey/charcoal text */
+  --color-secondary: #4b5563;   /* Muted grey text */
+  
+  --color-primary-green: #1e6b3e; /* Forest green */
+  --color-primary-green-dark: #124d2a; /* Darker forest green */
+  --color-primary-green-light: #e8f5e9; /* Soft green tint */
+  
+  --color-indigo: #166534;      /* Forest green accent */
+  --color-indigo-dark: #14532d; /* Dark forest green */
+  --color-indigo-light: #f0fdf4; /* Ultra-soft green tint */
+
+  --accent-yellow: #fef3c7;    /* Soft gold/amber main accent */
+  --accent-yellow-dark: #ca8a04; /* Golden yellow for hovers/states */
+  --accent-yellow-light: #fefbeb; /* Soft cream yellow */
+  --color-gold: #b45309;       /* Deep Gold */
+  --color-gold-glow: #f59e0b;  /* Radiant Gold */
+  
+  --color-success: #166534;    /* Strong forest green for success badge */
+  --color-danger: #dc2626;
+  --color-warning: #d97706;
+  --color-info: #2563eb;
+  
+  --border-subtle: #e5e7eb;
+  --border-focus: #1e6b3e;     /* Focused border turns forest green */
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+  
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease-in-out;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+}
+
+body {
+  background: linear-gradient(135deg, #fdfdfa 0%, #f4f6ee 100%);
+  min-height: 100vh;
+  color: var(--color-primary);
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Base utility classes */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* Layout helpers */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-premium);
+}
+
+/* Input Fields styling */
+.input-group {
+  margin-bottom: 1.25rem;
+}
+.input-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+  color: var(--color-secondary);
+}
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  outline: none;
+  transition: var(--transition-fast);
+}
+.input-field:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.15);
+}
+
+/* Keyframe Animations */
+
+/* Fade/Slide Up for scroll reveal */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-on-scroll {
+  opacity: 0;
+}
+.reveal-on-scroll.active {
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium Animations for Mobile Hero */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes glowPulse {
+  0% { box-shadow: 0 0 15px rgba(30, 107, 62, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(30, 107, 62, 0.6); }
+  100% { box-shadow: 0 0 15px rgba(30, 107, 62, 0.2); }
+}
+.animate-glow {
+  animation: glowPulse 3s infinite;
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+.delay-500 { animation-delay: 500ms; }
+
+/* Typewriter animation */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: var(--accent-yellow-dark) }
+}
+
+.typewriter {
+  display: inline-block;
+  overflow: hidden;
+  border-right: 3px solid var(--accent-yellow-dark);
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  animation: 
+    typing 3.5s steps(30, end) infinite alternate,
+    blink-caret 0.75s step-end infinite;
+}
+
+/* Pulse highlight */
+@keyframes softPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(250, 204, 21, 0);
+  }
+}
+.pulse-accent {
+  animation: softPulse 2s infinite;
+}
+
+/* Page slide transition */
+.page-transition-enter {
+  opacity: 0;
+  transform: scale(0.98) translateY(10px);
+}
+.page-transition-enter-active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: var(--transition-smooth);
+}
+
+/* Premium Buttons */
+.btn-primary {
+  background: var(--color-primary-green);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: none;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+.btn-primary:hover {
+  background: var(--color-primary-green-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-smooth);
+}
+.btn-secondary:hover {
+  background: var(--color-primary-green-light);
+  color: var(--color-primary-green-dark);
+  border-color: var(--color-primary-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-gold-outline {
+  background: transparent;
+  color: var(--accent-yellow-dark);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--accent-yellow-dark);
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.btn-gold-outline:hover {
+  background: var(--accent-yellow-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+}
+.badge-pending {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-warning);
+}
+.badge-approved {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+}
+.badge-rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+}
+.badge-active {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--color-info);
+}
+.badge-edit-required {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+.card-premium {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  transition: var(--transition-smooth);
+}
+.card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================
+   GLOBAL MOBILE RESPONSIVENESS (≤ 768px)
+   Eliminates overlapping, clipping, out-of-box cards, and nested scrollbars
+   for both Admin and User accounts.
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 1. Global Viewport & Container resets — Natural document scrolling without nested scroll traps */
+  html, body {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  #root,
+  .main-app-wrapper,
+  .main-layout-container {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-admin-topbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 56px !important;
+    z-index: 99999 !important;
+    -webkit-transform: translateZ(0) !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-content-scroll {
+    width: 100% !important;
+    max-width: 100vw !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 64px 0.65rem 3rem 0.65rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .main-content-scroll.is-auth-page {
+    padding: 0 !important;
+  }
+
+  /* Remove excessive nested page wrapper padding on mobile */
+  .main-content-scroll > div,
+  .main-content-scroll > div > div:first-child:not(.card-premium):not(.glass-panel) {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 2. Scroll Animation Mobile Fallback — Always show content on mobile without waiting for IntersectionObserver */
+  .reveal-on-scroll {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* 3. Cards & Panels — Full-width with snug, comfortable touch padding, auto-height (Excludes Navbars) */
+  .card-premium:not(nav),
+  .glass-panel:not(nav),
+  .chit-card-responsive {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    box-sizing: border-box !important;
+    padding: 0.85rem 0.75rem !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    overflow: visible !important;
+  }
+
+  /* 4. Bottom Nav Mobile Dock — Disabled / Removed per user preference */
+  .bottom-nav-container,
+  nav.bottom-nav-container {
+    display: none !important;
+  }
+
+
+  /* 3. Grid layouts: Outer card lists and multi-column dashboards convert to 1 full-width column */
+  .admin-chit-grid,
+  .user-dashboard-grid,
+  .admin-records-grid,
+  .responsive-doc-grid,
+  .dashboard-grid-layout,
+  div[style*="repeat(auto-fill"],
+  div[style*="repeat(auto-fit"],
+  div[style*="minmax(3"],
+  div[style*="minmax(4"],
+  div[style*="minmax(25"],
+  div[style*="minmax(28"],
+  div[style*="1.75fr 1fr"],
+  div[style*="1.55fr 1fr"],
+  div[style*="1.4fr 1fr"],
+  div[style*="1.2fr 1fr 1fr"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    gap: 0.85rem !important;
+  }
+
+  /* 4. Chit Scheme Internal Metrics — 2-column key metrics inside chit cards */
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="grid-template-columns: 1fr  1fr"],
+  div[style*="gridTemplateColumns: '1fr 1fr'"],
+  .chit-stats-grid,
+  .two-col-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.35rem !important;
+    margin: 0.55rem 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .chit-stats-grid > div {
+    padding: 0.42rem 0.55rem !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  .chit-stats-grid > div > span {
+    font-size: 0.62rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .chit-stats-grid > div > strong {
+    font-size: 0.95rem !important;
+    line-height: 1.3 !important;
+  }
+
+  /* 5. Header Bars & Action Button Groups on Admin & User pages */
+  .chit-manager-main-section {
+    gap: 0.75rem !important;
+  }
+
+  .chit-manager-header,
+  .admin-page-header,
+  .page-header-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.55rem !important;
+    padding-bottom: 0.65rem !important;
+    margin-bottom: 0.65rem !important;
+    width: 100% !important;
+    boxSizing: border-box !important;
+  }
+
+  .chit-manager-header h2,
+  .admin-page-header h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .chit-manager-header p,
+  .admin-page-header p {
+    font-size: 0.76rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .chit-manager-actions,
+  .admin-page-actions,
+  .header-actions-flex {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .chit-manager-actions > button,
+  .chit-manager-actions > a,
+  .admin-page-actions > button,
+  .admin-page-actions > a {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    padding: 0.42rem 0.5rem !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    height: 34px !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    gap: 0.3rem !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+  }
+
+  /* 6. Chit Card Action Buttons (Add User, View, Start Chit, Edit, Delete) — Compact 2-column touch grid */
+  .chit-card-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    border-top: 1px solid #f3f4f6 !important;
+    padding-top: 0.55rem !important;
+    margin-top: 0.45rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .chit-card-actions > button,
+  .chit-card-actions > a {
+    width: 100% !important;
+    min-width: 0 !important;
+    flex: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    padding: 0.4rem 0.35rem !important;
+    font-size: 0.76rem !important;
+    font-weight: 700 !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
+  }
+
+  /* 7. User Browse Chits card responsiveness */
+  .admin-chit-grid .card-premium {
+    height: auto !important;
+    padding: 0.85rem 0.75rem !important;
+  }
+
+  .admin-chit-grid .card-premium h3 {
+    font-size: 1.05rem !important;
+  }
+
+  .admin-chit-grid .card-premium div[style*="Managed By"] {
+    padding: 0.45rem 0.6rem !important;
+    margin-bottom: 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .admin-chit-grid .card-premium .btn-primary {
+    padding: 0.55rem 0.75rem !important;
+    font-size: 0.82rem !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* 8. User Documents & Admin Documents grid & cards */
+  .responsive-doc-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  .responsive-doc-grid > div > div {
+    padding: 0.85rem 0.75rem !important;
+    min-height: auto !important;
+  }
+
+  /* 9. Dashboard 4-item stats row & Metric Pills */
+  .compact-stats-box {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+  }
+
+  .compact-stat-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0.5rem 0.35rem !important;
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    border-right: 1px solid #e2e8f0 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+
+  .chit-amounts-grid,
+  .chit-months-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.4rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .chit-amount-pill,
+  .chit-month-pill {
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+
+  /* 10. Tables & Ledgers: Smooth horizontal scroll without page blowout */
+  .table-responsive,
+  div:has(> table),
+  div[style*="overflowX"],
+  div[style*="overflow-x"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: block !important;
+  }
+
+  table {
+    font-size: 0.78rem !important;
+    min-width: 540px;
+  }
+  th, td {
+    padding: 0.55rem 0.45rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* 11. Headings & Typography scaling */
+  h1 {
+    font-size: 1.35rem !important;
+    line-height: 1.25 !important;
+  }
+  h2 {
+    font-size: 1.2rem !important;
+    line-height: 1.3 !important;
+  }
+  h3 {
+    font-size: 1.05rem !important;
+    line-height: 1.3 !important;
+  }
+  h4 {
+    font-size: 0.95rem !important;
+  }
+
+  /* 12. Input & Modal layouts */
+  .input-group {
+    margin-bottom: 0.75rem !important;
+  }
+  input, select, textarea {
+    font-size: 0.9rem !important;
+    max-width: 100% !important;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin, .animate-spin {
+  animation: spin 0.8s linear infinite !important;
+}

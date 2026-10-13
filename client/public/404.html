@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#166534" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InaVolu Chit Funds - Trusted Chit Fund Management</title>
+    <meta name="description" content="InaVolu Chit Funds Private Limited is your trusted platform for managing and participating in secure chit funds." />
+    <meta name="keywords" content="chit fund, InaVolu Chit Funds, secure savings, investments" />
+    <meta name="author" content="InaVolu Chit Funds Private Limited" />
+
+    <script>
+      // Diagnostic script error tracking
+      window.addEventListener('error', function(e) {
+        var root = document.getElementById('root');
+        if (root && (!root.innerHTML || root.innerHTML.trim() === '')) {
+          var details = '';
+          if (e.target && (e.target.src || e.target.href)) {
+            details = 'Failed to load resource: ' + (e.target.src || e.target.href);
+          } else {
+            details = (e.message || (e.error && e.error.message) || 'Script execution error') + (e.filename ? ('\nFile: ' + e.filename + ':' + e.lineno + ':' + (e.colno || 0)) : '');
+          }
+          root.innerHTML = '<div style="padding:2rem;margin:2rem auto;max-width:600px;border:1px solid #fca5a5;background:#fef2f2;border-radius:12px;font-family:sans-serif;color:#991b1b;box-shadow:0 10px 25px rgba(0,0,0,0.05);"><h2 style="margin:0 0 0.5rem 0;font-size:1.25rem;">Application Startup Notice</h2><p style="margin:0 0 0.75rem 0;font-weight:600;">Script load or execution failure</p><pre style="background:#fee2e2;padding:0.75rem;border-radius:6px;font-size:0.8rem;white-space:pre-wrap;overflow-x:auto;">' + details + '</pre><button onclick="location.reload()" style="margin-top:1rem;padding:0.5rem 1.25rem;background:#166534;color:#fff;border:none;border-radius:6px;font-weight:600;cursor:pointer;">Reload Application</button></div>';
+        }
+      }, true);
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

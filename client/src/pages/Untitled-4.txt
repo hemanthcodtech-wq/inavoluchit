@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#166534" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ANR VRIDHI Chits - Trusted Chit Fund Management</title>
+    <meta name="description" content="ANR VRIDHI Chits Private Limited is your trusted platform for managing and participating in secure chit funds." />
+    <meta name="keywords" content="chit fund, ANR VRIDHI Chits, secure savings, investments" />
+    <meta name="author" content="ANR VRIDHI Chits Private Limited" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://anrvridhi.com/" />
+    <meta property="og:title" content="ANR VRIDHI Chits - Trusted Chit Fund Management" />
+    <met
