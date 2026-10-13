@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
@@ -310,7 +310,7 @@ const Dashboard = () => {
                 boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 boxSizing: 'border-box'
               }}>
-                <Calendar size={16} color="#1e6b3e" style={{ flexShrink: 0 }} />
+                <Calendar size={16} color="#3b5bdb" style={{ flexShrink: 0 }} />
                 <input
                   type="date"
                   value={selectedDate}
@@ -431,13 +431,13 @@ const Dashboard = () => {
           {/* Card 1: TOTAL MEMBERS */}
           <div 
             onClick={() => navigate('/admin/all-users')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #1e6b3e' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(37, 99, 235, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            style={{ ...statCardStyle, borderTop: '3.5px solid #3b5bdb', boxShadow: '0 8px 24px -4px rgba(59, 91, 219, 0.12)' }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px -4px rgba(59, 91, 219, 0.22)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px -4px rgba(59, 91, 219, 0.12)'; }}
           >
             <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#1e6b3e' }}>TOTAL MEMBERS</span>
-              <Users size={16} color="#1e6b3e" />
+              <span style={{ ...cardLabelStyle, color: '#3b5bdb' }}>TOTAL MEMBERS</span>
+              <Users size={18} color="#3b5bdb" />
             </div>
             <div style={cardValueStyle}>{totalMembersVal}</div>
             <div style={cardSubtextStyle}>{currentOverviewChit?.name || 'INAVOLU-CHIT-01'}</div>
@@ -446,13 +446,13 @@ const Dashboard = () => {
           {/* Card 2: CHIT VALUE */}
           <div 
             onClick={() => navigate('/admin/chits')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #d97706' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(217, 119, 6, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            style={{ ...statCardStyle, borderTop: '3.5px solid #d97706', boxShadow: '0 8px 24px -4px rgba(245, 158, 11, 0.12)' }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px -4px rgba(245, 158, 11, 0.22)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px -4px rgba(245, 158, 11, 0.12)'; }}
           >
             <div style={cardHeaderStyle}>
               <span style={{ ...cardLabelStyle, color: '#d97706' }}>CHIT VALUE</span>
-              <Coins size={16} color="#d97706" />
+              <Coins size={18} color="#d97706" />
             </div>
             <div style={cardValueStyle}>₹{chitValueNum.toLocaleString('en-IN')}</div>
             <div style={cardSubtextStyle}>{chitDurationVal} Months Duration</div>
@@ -461,16 +461,16 @@ const Dashboard = () => {
           {/* Card 3: PAID · [MONTH] */}
           <div 
             onClick={() => navigate('/admin/payment-history')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #059669', background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(5, 150, 105, 0.12)'; }}
+            style={{ ...statCardStyle, borderTop: '3px solid #3b5bdb', background: 'linear-gradient(180deg, #ffffff 0%, #f0f0ff 100%)' }}
+            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(59, 91, 219, 0.12)'; }}
             onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
           >
             <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#059669' }}>PAID · {selectedMonth.toUpperCase()}</span>
-              <CheckCircle size={16} color="#059669" />
+              <span style={{ ...cardLabelStyle, color: '#3b5bdb' }}>PAID · {selectedMonth.toUpperCase()}</span>
+              <CheckCircle size={16} color="#3b5bdb" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#059669' }}>₹{paidVal.toLocaleString('en-IN')}</div>
-            <div style={{ ...cardSubtextStyle, color: '#047857' }}>Total installments collected</div>
+            <div style={{ ...cardValueStyle, color: '#3b5bdb' }}>₹{paidVal.toLocaleString('en-IN')}</div>
+            <div style={{ ...cardSubtextStyle, color: '#1e3a8a' }}>Total installments collected</div>
           </div>
 
           {/* Card 4: DUE · [MONTH] */}
@@ -556,8 +556,8 @@ const Dashboard = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
             {/* Pending Payments — highlighted card */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-              <div style={{ background: 'linear-gradient(135deg, #124d2a 0%, #1e6b3e 50%, #22c55e 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', boxShadow: '0 8px 24px -4px rgba(59, 91, 219, 0.1)', overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg, #172554 0%, #3b5bdb 60%, #1e3a8a 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: '-15px', right: '-15px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -570,7 +570,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   {(stats?.pendingPaymentsCount || 0) > 0 && (
-                    <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.82rem', fontWeight: 800, padding: '0.3rem 0.75rem', borderRadius: '1rem', whiteSpace: 'nowrap' }}>
+                    <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.82rem', fontWeight: 800, padding: '0.3rem 0.75rem', borderRadius: '1rem', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)' }}>
                       {stats?.pendingPaymentsCount} Pending
                     </span>
                   )}
@@ -580,15 +580,15 @@ const Dashboard = () => {
                 <p style={{ fontSize: '0.95rem', color: '#4b5563', margin: 0, fontWeight: 500, flex: '1 1 200px', minWidth: 0 }}>
                   Verify user transaction receipts to confirm monthly installments.
                 </p>
-                <Link to="/admin/payments" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#e8f5e9', color: '#1e6b3e', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', flexShrink: 0 }}>
+                <Link to="/admin/payments" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#eef2ff', color: '#1e3a8a', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(59, 91, 219, 0.32)', flexShrink: 0, boxShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>
                   <span>Review</span><ArrowRight size={15} />
                 </Link>
               </div>
             </div>
 
             {/* Chit Management */}
-            <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-              <div style={{ background: 'linear-gradient(135deg, #15803d 0%, #16a34a 60%, #22c55e 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', boxShadow: '0 8px 24px -4px rgba(59, 91, 219, 0.1)', overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg, #3b5bdb 0%, #1e3a8a 60%, #172554 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: '-15px', right: '-15px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -606,7 +606,7 @@ const Dashboard = () => {
                 <p style={{ fontSize: '0.95rem', color: '#4b5563', margin: 0, fontWeight: 500, flex: '1 1 200px', minWidth: 0 }}>
                   Create new chit groups, manage enrollments, and configure settings.
                 </p>
-                <Link to="/admin/chits" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#e8f5e9', color: '#1e6b3e', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bbf7d0', flexShrink: 0 }}>
+                <Link to="/admin/chits" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#eef2ff', color: '#3b5bdb', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #c7d2fe', flexShrink: 0 }}>
                   <span>Manage</span><ArrowRight size={15} />
                 </Link>
               </div>
@@ -671,8 +671,8 @@ const Dashboard = () => {
               <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '0 0 1.15rem 0' }}>Platform Health</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {[
-                  { label: 'Total Chits', value: stats?.totalChits || 0, color: '#1e6b3e', pct: Math.min(((stats?.totalChits || 0) / 20) * 100, 100) },
-                  { label: 'Active Chits', value: stats?.activeChits || 0, color: '#1e6b3e', pct: stats?.totalChits ? Math.round(((stats?.activeChits || 0) / stats.totalChits) * 100) : 0 },
+                  { label: 'Total Chits', value: stats?.totalChits || 0, color: '#3b5bdb', pct: Math.min(((stats?.totalChits || 0) / 20) * 100, 100) },
+                  { label: 'Active Chits', value: stats?.activeChits || 0, color: '#3b5bdb', pct: stats?.totalChits ? Math.round(((stats?.activeChits || 0) / stats.totalChits) * 100) : 0 },
                   { label: 'Pending Payments', value: stats?.pendingPaymentsCount || 0, color: '#f59e0b', pct: Math.min(((stats?.pendingPaymentsCount || 0) / 10) * 100, 100) },
                 ].map((item, idx) => (
                   <div key={idx}>
@@ -693,8 +693,8 @@ const Dashboard = () => {
               <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '0 0 1.15rem 0' }}>Quick Actions</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 {[
-                  { label: 'System Records', sub: 'View all chit ledgers', path: '/admin/records', color: '#1e6b3e', bg: '#eff6ff' },
-                  { label: 'Verify Payments', sub: `${stats?.pendingPaymentsCount || 0} awaiting`, path: '/admin/payments', color: '#1e6b3e', bg: '#eff6ff' },
+                  { label: 'System Records', sub: 'View all chit ledgers', path: '/admin/records', color: '#3b5bdb', bg: '#eff6ff' },
+                  { label: 'Verify Payments', sub: `${stats?.pendingPaymentsCount || 0} awaiting`, path: '/admin/payments', color: '#3b5bdb', bg: '#eff6ff' },
                   { label: 'Manage Chits', sub: 'Create & configure', path: '/admin/chits', color: '#7c3aed', bg: '#f5f3ff' },
                 ].map((item, idx) => (
                   <Link key={idx} to={item.path} style={{
@@ -717,11 +717,11 @@ const Dashboard = () => {
             <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', padding: '1.5rem', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
               <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '0 0 0.85rem 0' }}>Revenue Summary</h4>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', marginBottom: '0.35rem' }}>
-                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#1e6b3e', lineHeight: 1 }}>₹{((stats?.totalRevenue || 0) / 1000).toFixed(1)}K</span>
+                <span style={{ fontSize: '2rem', fontWeight: 800, color: '#3b5bdb', lineHeight: 1 }}>₹{((stats?.totalRevenue || 0) / 1000).toFixed(1)}K</span>
                 <span style={{ fontSize: '0.88rem', color: '#4b5563', fontWeight: 600, marginBottom: '0.2rem' }}>total collected</span>
               </div>
               <div style={{ height: '8px', backgroundColor: '#f3f4f6', borderRadius: '1rem', overflow: 'hidden', marginBottom: '0.65rem' }}>
-                <div style={{ height: '100%', width: `${Math.min(((stats?.totalRevenue || 0) / 500000) * 100, 100)}%`, background: 'linear-gradient(90deg, #1e6b3e, #22c55e)', borderRadius: '1rem' }} />
+                <div style={{ height: '100%', width: `${Math.min(((stats?.totalRevenue || 0) / 500000) * 100, 100)}%`, background: 'linear-gradient(90deg, #3b5bdb, #3b5bdb)', borderRadius: '1rem' }} />
               </div>
               <span style={{ fontSize: '0.82rem', color: '#6b7280', fontWeight: 600 }}>across {stats?.totalChits || 0} chit pools</span>
             </div>
@@ -855,7 +855,7 @@ const Dashboard = () => {
       {/* Compact 4-in-1 Unified Stats Strip */}
       <div className="compact-stats-box">
         <div className="compact-stat-item">
-          <div className="compact-stat-icon" style={{ color: '#1e6b3e' }}>
+          <div className="compact-stat-icon" style={{ color: '#3b5bdb' }}>
             <Briefcase size={16} />
           </div>
           <span className="compact-stat-label">Active</span>
@@ -863,7 +863,7 @@ const Dashboard = () => {
         </div>
 
         <div className="compact-stat-item">
-          <div className="compact-stat-icon" style={{ color: '#059669' }}>
+          <div className="compact-stat-icon" style={{ color: '#3b5bdb' }}>
             <CheckCircle size={16} />
           </div>
           <span className="compact-stat-label">Completed</span>
@@ -899,7 +899,7 @@ const Dashboard = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
                 <div className="primary-chit-icon-box" style={{
                   width: '40px', height: '40px', borderRadius: '50%',
-                  backgroundColor: '#1e6b3e', color: '#fff',
+                  backgroundColor: '#3b5bdb', color: '#fff',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 4px 10px rgba(22, 163, 74, 0.25)', flexShrink: 0
                 }}>
@@ -909,7 +909,7 @@ const Dashboard = () => {
                   <h3 className="primary-chit-title" style={{ fontSize: '1rem', fontWeight: 800, color: '#111827', lineHeight: 1.25, margin: 0, wordBreak: 'break-word' }}>{primaryChit.name}</h3>
                   <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center', marginTop: '0.15rem', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>ID: {chitIdText}</span>
-                    <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.5rem', backgroundColor: '#e8f5e9', color: '#1e6b3e', borderRadius: '1rem', fontWeight: 700 }}>Active</span>
+                    <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.5rem', backgroundColor: '#eef2ff', color: '#3b5bdb', borderRadius: '1rem', fontWeight: 700 }}>Active</span>
                   </div>
                 </div>
               </div>
@@ -985,7 +985,7 @@ const Dashboard = () => {
                   <CheckCircle size={15} color="#3b82f6" />
                   <span>Payment Status</span>
                 </div>
-                <span style={{ fontSize: '0.7rem', padding: '0.12rem 0.65rem', borderRadius: '1rem', border: '1px solid #bbf7d0', backgroundColor: '#e8f5e9', color: '#1e6b3e', fontWeight: 600 }}>{paymentStatus}</span>
+                <span style={{ fontSize: '0.7rem', padding: '0.12rem 0.65rem', borderRadius: '1rem', border: '1px solid #c7d2fe', backgroundColor: '#eef2ff', color: '#3b5bdb', fontWeight: 600 }}>{paymentStatus}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '0.65rem' }}>
@@ -993,7 +993,7 @@ const Dashboard = () => {
                   <ListFilter size={15} color="#3b82f6" />
                   <span>Installment History</span>
                 </div>
-                <Link to="/my-chits" style={{ color: '#1e6b3e', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', textDecoration: 'none' }}>
+                <Link to="/my-chits" style={{ color: '#3b5bdb', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.2rem', textDecoration: 'none' }}>
                   <span>View Details</span>
                   <ChevronRight size={13} />
                 </Link>
@@ -1006,8 +1006,8 @@ const Dashboard = () => {
               className="primary-chit-action-btn"
               style={{
                 width: '100%', height: '40px', borderRadius: '10px',
-                backgroundColor: '#e8f5e9', border: '1.5px solid #3b82f6',
-                color: '#1e6b3e', fontWeight: 700, fontSize: '0.86rem',
+                backgroundColor: '#eef2ff', border: '1.5px solid #3b82f6',
+                color: '#3b5bdb', fontWeight: 700, fontSize: '0.86rem',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', transition: 'all 0.2s ease',
                 boxShadow: '0 2px 6px rgba(22, 163, 74, 0.08)'

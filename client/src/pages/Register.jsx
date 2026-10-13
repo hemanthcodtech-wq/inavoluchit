@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -365,10 +365,10 @@ const Register = () => {
             margin: '0 auto 1.5rem auto',
             border: '3px solid #a5b4fc'
           }}>
-            <CheckCircle size={52} color="#1e6b3e" />
+            <CheckCircle size={52} color="#3b5bdb" />
           </div>
 
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#1e6b3e', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, color: '#3b5bdb', marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
             Registration Successful!
           </h2>
 
@@ -384,7 +384,7 @@ const Register = () => {
             marginBottom: '2rem',
             textAlign: 'center'
           }}>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e6b3e', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3b5bdb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Your Member ID
             </span>
             <div style={{ fontSize: '2rem', fontWeight: 900, color: '#1d4ed8', letterSpacing: '0.08em', marginTop: '0.25rem' }}>
@@ -430,7 +430,7 @@ const Register = () => {
         flexDirection: 'column',
         justifyContent: 'space-between',
         padding: '3rem 3.5rem',
-        background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)',
+        background: 'linear-gradient(180deg, #ffffff 0%, #f0f0ff 100%)',
         borderRight: '1px solid #e2e8f0',
         position: 'relative',
         overflow: 'hidden'
@@ -454,17 +454,17 @@ const Register = () => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '0.45rem',
-            backgroundColor: '#e8f5e9',
-            border: '1px solid #bbf7d0',
+            backgroundColor: '#eef2ff',
+            border: '1px solid #c7d2fe',
             padding: '0.4rem 0.95rem',
             borderRadius: '9999px',
-            color: '#166534',
+            color: '#1e3a8a',
             fontWeight: 700,
             fontSize: '0.82rem',
             marginBottom: '1.25rem',
             width: 'fit-content'
           }}>
-            <Sparkles size={14} color="#16a34a" />
+            <Sparkles size={14} color="#4f6ee8" />
             <span>Instant Membership Registration</span>
           </div>
 
@@ -493,12 +493,12 @@ const Register = () => {
                   gap: '0.85rem',
                   padding: '0.75rem 1.15rem',
                   borderRadius: '0.75rem',
-                  backgroundColor: currentStep === s.step ? '#1e6b3e' : (s.step < currentStep ? '#f0fdf4' : '#ffffff'),
-                  color: currentStep === s.step ? '#ffffff' : (s.step < currentStep ? '#166534' : '#64748b'),
+                  backgroundColor: currentStep === s.step ? '#3b5bdb' : (s.step < currentStep ? '#f0f0ff' : '#ffffff'),
+                  color: currentStep === s.step ? '#ffffff' : (s.step < currentStep ? '#1e3a8a' : '#64748b'),
                   fontWeight: currentStep === s.step ? 800 : 600,
                   fontSize: '0.9rem',
                   cursor: 'pointer',
-                  border: currentStep === s.step ? 'none' : (s.step < currentStep ? '1.5px solid #bbf7d0' : '1px solid #e2e8f0'),
+                  border: currentStep === s.step ? 'none' : (s.step < currentStep ? '1.5px solid #c7d2fe' : '1px solid #e2e8f0'),
                   boxShadow: currentStep === s.step ? '0 4px 14px rgba(30, 107, 62, 0.25)' : 'none',
                   transition: 'all 0.2s'
                 }}
@@ -507,7 +507,7 @@ const Register = () => {
                   width: '26px',
                   height: '26px',
                   borderRadius: '50%',
-                  backgroundColor: currentStep === s.step ? 'rgba(255, 255, 255, 0.25)' : (s.step < currentStep ? '#166534' : '#f1f5f9'),
+                  backgroundColor: currentStep === s.step ? 'rgba(255, 255, 255, 0.25)' : (s.step < currentStep ? '#1e3a8a' : '#f1f5f9'),
                   color: currentStep === s.step || s.step < currentStep ? '#ffffff' : '#475569',
                   display: 'flex',
                   alignItems: 'center',
@@ -527,7 +527,7 @@ const Register = () => {
             alignItems: 'center',
             gap: '0.5rem',
             fontSize: '0.85rem',
-            color: '#166534',
+            color: '#1e3a8a',
             fontWeight: 600
           }}>
             <ShieldCheck size={16} />
@@ -571,7 +571,7 @@ const Register = () => {
                 style={{ width: '100%', maxWidth: '240px', height: 'auto', maxHeight: '56px', objectFit: 'contain', display: 'block' }} 
               />
             </Link>
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#166534' }}>New Member Registration Portal</span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#1e3a8a' }}>New Member Registration Portal</span>
           </div>
           
           {/* Stepper Header Pills for Mobile / Tablet */}
@@ -608,14 +608,14 @@ const Register = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  backgroundColor: currentStep === s.num ? '#1e6b3e' : (s.num < currentStep ? '#166534' : '#f1f5f9'),
+                  backgroundColor: currentStep === s.num ? '#3b5bdb' : (s.num < currentStep ? '#1e3a8a' : '#f1f5f9'),
                   color: currentStep === s.num || s.num < currentStep ? '#ffffff' : '#64748b',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 800,
                   fontSize: '0.85rem',
-                  border: currentStep === s.num ? '2.5px solid #bbf7d0' : '2px solid transparent',
+                  border: currentStep === s.num ? '2.5px solid #c7d2fe' : '2px solid transparent',
                   boxShadow: currentStep === s.num ? '0 0 0 3px rgba(30, 107, 62, 0.2)' : 'none',
                   transition: 'all 0.2s'
                 }}>
@@ -624,7 +624,7 @@ const Register = () => {
                 <span style={{
                   fontSize: '0.72rem',
                   fontWeight: currentStep === s.num ? 800 : 600,
-                  color: currentStep === s.num ? '#1e6b3e' : '#64748b',
+                  color: currentStep === s.num ? '#3b5bdb' : '#64748b',
                   marginTop: '0.25rem'
                 }}>
                   {s.label}
@@ -663,7 +663,7 @@ const Register = () => {
                   textDecoration: 'none',
                   transition: 'color 0.2s ease'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.color = '#1e6b3e'}
+                onMouseOver={(e) => e.currentTarget.style.color = '#3b5bdb'}
                 onMouseOut={(e) => e.currentTarget.style.color = '#64748b'}
               >
                 <ArrowLeft size={16} />
@@ -671,7 +671,7 @@ const Register = () => {
               </Link>
 
               <span style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 600 }}>
-                Step <strong style={{ color: '#1e6b3e' }}>{currentStep}</strong> of 4
+                Step <strong style={{ color: '#3b5bdb' }}>{currentStep}</strong> of 4
               </span>
             </div>
 
@@ -681,19 +681,19 @@ const Register = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '0.85rem 1.25rem',
-              backgroundColor: '#f0fdf4',
+              backgroundColor: '#f0f0ff',
               borderRadius: '0.85rem',
-              border: '1px solid #bbf7d0',
+              border: '1px solid #c7d2fe',
               marginBottom: '1.75rem',
               flexWrap: 'wrap',
               gap: '0.5rem'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ShieldCheck size={18} color="#166534" />
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ShieldCheck size={18} color="#1e3a8a" />
                 </div>
                 <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'block' }}>
                     Auto-Assigned Member ID
                   </span>
                   <span style={{ fontSize: '1.2rem', fontWeight: 900, color: '#124d2a', letterSpacing: '0.05em' }}>
@@ -701,7 +701,7 @@ const Register = () => {
                   </span>
                 </div>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#166534', backgroundColor: '#e8f5e9', border: '1px solid #bbf7d0', padding: '0.25rem 0.65rem', borderRadius: '9999px', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.75rem', color: '#1e3a8a', backgroundColor: '#eef2ff', border: '1px solid #c7d2fe', padding: '0.25rem 0.65rem', borderRadius: '9999px', fontWeight: 700 }}>
                 Verified Format
               </span>
             </div>
@@ -1320,7 +1320,7 @@ const Register = () => {
                       padding: '0.75rem 1.85rem',
                       borderRadius: '0.65rem',
                       border: 'none',
-                      backgroundColor: '#1e6b3e',
+                      backgroundColor: '#3b5bdb',
                       color: '#ffffff',
                       fontWeight: 700,
                       fontSize: '0.95rem',
@@ -1329,7 +1329,7 @@ const Register = () => {
                       transition: 'all 0.2s'
                     }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#124d2a'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e6b3e'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b5bdb'}
                   >
                     <span>Next: Step {currentStep + 1}</span>
                     <ArrowRight size={16} />
@@ -1345,7 +1345,7 @@ const Register = () => {
                       padding: '0.85rem 2.25rem',
                       borderRadius: '0.65rem',
                       border: 'none',
-                      backgroundColor: '#1e6b3e',
+                      backgroundColor: '#3b5bdb',
                       color: '#ffffff',
                       fontWeight: 800,
                       fontSize: '0.98rem',
@@ -1354,7 +1354,7 @@ const Register = () => {
                       transition: 'all 0.2s'
                     }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#124d2a'}
-                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1e6b3e'}
+                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b5bdb'}
                   >
                     {loading ? (
                       <span>Activating Membership...</span>
@@ -1373,7 +1373,7 @@ const Register = () => {
           {/* Already have an account */}
           <div style={{ textAlign: 'center', marginTop: '1.75rem', fontSize: '0.92rem', color: '#4b5563' }}>
             Already have a registered member account?{' '}
-            <Link to="/login" style={{ color: '#1e6b3e', fontWeight: 800, textDecoration: 'none' }}>
+            <Link to="/login" style={{ color: '#3b5bdb', fontWeight: 800, textDecoration: 'none' }}>
               Sign In to Portal
             </Link>
           </div>
@@ -1463,10 +1463,10 @@ const uploadBoxStyle = (hasFile) => ({
   gap: '0.65rem',
   padding: '0.75rem 1rem',
   borderRadius: '0.65rem',
-  border: hasFile ? '1.5px solid #1e6b3e' : '1.5px dashed #cbd5e1',
-  backgroundColor: hasFile ? '#f0fdf4' : '#ffffff',
+  border: hasFile ? '1.5px solid #3b5bdb' : '1.5px dashed #cbd5e1',
+  backgroundColor: hasFile ? '#f0f0ff' : '#ffffff',
   cursor: 'pointer',
-  color: hasFile ? '#166534' : '#64748b',
+  color: hasFile ? '#1e3a8a' : '#64748b',
   fontWeight: hasFile ? 700 : 500,
   transition: 'all 0.2s ease',
   boxShadow: hasFile ? '0 2px 8px rgba(30, 107, 62, 0.08)' : 'none'

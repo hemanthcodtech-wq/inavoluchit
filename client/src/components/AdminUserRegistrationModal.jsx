@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   X, 
@@ -412,7 +412,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                <User size={18} color="#4ade80" />
+                <User size={18} color="#818cf8" />
               </div>
               <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
                 Manual User Registration
@@ -421,7 +421,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 backgroundColor: 'rgba(74, 222, 128, 0.2)',
-                color: '#4ade80',
+                color: '#818cf8',
                 padding: '0.2rem 0.65rem',
                 borderRadius: '9999px',
                 textTransform: 'uppercase',

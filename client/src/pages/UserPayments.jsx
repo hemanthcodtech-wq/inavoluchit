@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
 import { CreditCard, CheckCircle, Hourglass, AlertCircle, Edit3, Upload, RefreshCw, Download, Eye } from 'lucide-react';
@@ -364,7 +364,7 @@ const UserPayments = () => {
                           fontSize: '0.82rem',
                           backgroundColor: editMessage.type === 'success' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
                           border: `1px solid ${editMessage.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'}`,
-                          color: editMessage.type === 'success' ? '#065f46' : '#b91c1c'
+                          color: editMessage.type === 'success' ? '#1e3a8a' : '#b91c1c'
                         }}>
                           {editMessage.text}
                         </div>
@@ -421,7 +421,7 @@ const UserPayments = () => {
                             alignItems: 'center',
                             gap: '0.4rem',
                             background: 'var(--color-success)',
-                            borderColor: '#059669'
+                            borderColor: '#3b5bdb'
                           }}
                         >
                           {editLoading ? (

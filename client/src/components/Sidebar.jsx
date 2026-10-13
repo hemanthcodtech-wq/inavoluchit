@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -185,25 +185,25 @@ const Sidebar = () => {
         flexShrink: 0
       }}>
         <div style={{
-          width: '36px',
-          height: '36px',
+          width: '38px',
+          height: '38px',
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #124d2a 0%, #1e6b3e 100%)',
-          color: '#fef08a',
-          boxShadow: '0 2px 6px rgba(30, 107, 62, 0.3)',
+          background: 'linear-gradient(135deg, #3b5bdb 0%, #1e3a8a 100%)',
+          color: '#ffffff',
+          boxShadow: '0 4px 12px rgba(59, 91, 219, 0.38)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 800,
-          fontSize: '0.9rem'
+          fontSize: '0.92rem'
         }}>
           {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
         </div>
         <div style={{ overflow: 'hidden', flex: 1 }}>
-          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#111827', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {user.name || 'System Admin'}
           </p>
-          <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0 }}>
+          <p style={{ fontSize: '0.72rem', color: '#64748b', margin: 0 }}>
             {user.email}
           </p>
         </div>
@@ -212,7 +212,7 @@ const Sidebar = () => {
       <style>{`
         .sidebar-container {
           scrollbar-width: thin;
-          scrollbar-color: rgba(30, 107, 62, 0.2) transparent;
+          scrollbar-color: rgba(59, 91, 219, 0.22) transparent;
         }
         .sidebar-container::-webkit-scrollbar {
           width: 5px;
@@ -221,23 +221,23 @@ const Sidebar = () => {
           background: transparent;
         }
         .sidebar-container::-webkit-scrollbar-thumb {
-          background: rgba(30, 107, 62, 0.2);
+          background: rgba(59, 91, 219, 0.22);
           border-radius: 9999px;
         }
         .sidebar-container::-webkit-scrollbar-thumb:hover {
-          background: rgba(30, 107, 62, 0.38);
+          background: rgba(59, 91, 219, 0.42);
         }
         .sidebar-link:hover {
-          background-color: rgba(30, 107, 62, 0.08);
-          color: #1e6b3e;
+          background-color: rgba(59, 91, 219, 0.10);
+          color: #3b5bdb;
           transform: translateX(3px);
         }
         .sidebar-link.active {
-          background: linear-gradient(135deg, #124d2a 0%, #1e6b3e 50%, #15803d 100%) !important;
+          background: linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 60%, #4f6ee8 100%) !important;
           color: #ffffff !important;
           font-weight: 700 !important;
-          box-shadow: 0 4px 14px rgba(30, 107, 62, 0.35) !important;
-          border-left: 3px solid #f59e0b !important;
+          box-shadow: 0 4px 16px rgba(59, 91, 219, 0.42) !important;
+          border-left: 3.5px solid #f59e0b !important;
         }
         @media (max-width: 768px) {
           .sidebar-container {

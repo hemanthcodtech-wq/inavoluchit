@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -119,12 +119,12 @@ const MobileHeader = () => {
               <span style={{
                 fontSize: '0.62rem',
                 fontWeight: 800,
-                backgroundColor: '#e8f5e9',
-                color: '#166534',
+                backgroundColor: '#eef2ff',
+                color: '#1e3a8a',
                 padding: '0.12rem 0.45rem',
                 borderRadius: '9999px',
                 textTransform: 'uppercase',
-                border: '1px solid #bbf7d0',
+                border: '1px solid #c7d2fe',
                 letterSpacing: '0.04em'
               }}>
                 {user.role === 'superadmin' ? 'Admin' : 'Staff'}
@@ -231,7 +231,7 @@ const MobileHeader = () => {
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #124d2a 0%, #1e6b3e 100%)',
+              background: 'linear-gradient(135deg, #124d2a 0%, #3b5bdb 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
@@ -300,7 +300,7 @@ const MobileHeader = () => {
                 padding: '0.65rem 0.85rem',
                 borderRadius: '8px',
                 textDecoration: 'none',
-                color: isActive ? '#1e6b3e' : '#334155',
+                color: isActive ? '#3b5bdb' : '#334155',
                 backgroundColor: isActive ? 'rgba(30, 107, 62, 0.08)' : 'transparent',
                 fontWeight: isActive ? 700 : 500,
                 fontSize: '0.88rem',
@@ -309,7 +309,7 @@ const MobileHeader = () => {
               })}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ color: location.pathname === item.to ? '#1e6b3e' : '#64748b' }}>
+                <span style={{ color: location.pathname === item.to ? '#3b5bdb' : '#64748b' }}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>

@@ -148,12 +148,13 @@ const Home = () => {
       {/* HERO SECTION */}
       <section style={{
         position: 'relative',
-        background: 'linear-gradient(145deg, #eef7f0 0%, #fbfcf8 50%, #fefce8 100%)',
-        padding: '3.5rem 1.5rem 4.5rem 1.5rem',
-        borderBottom: '1px solid rgba(30, 107, 62, 0.08)',
-        borderRadius: '0 0 2rem 2rem'
+        background: 'radial-gradient(ellipse at 30% 0%, rgba(59, 91, 219, 0.12) 0%, rgba(79, 70, 229, 0.06) 40%, rgba(245, 158, 11, 0.05) 70%, rgba(245, 246, 250, 0.95) 100%)',
+        padding: '4rem 1.5rem 5rem 1.5rem',
+        borderBottom: '1px solid rgba(59, 91, 219, 0.12)',
+        borderRadius: '0 0 2.5rem 2.5rem',
+        boxShadow: '0 20px 40px -15px rgba(59, 91, 219, 0.10)'
       }}>
-        <div style={{ maxWidth: '860px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
+        <div style={{ maxWidth: '880px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
           
           <ScrollAnimationWrapper>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.25rem' }}>
@@ -161,16 +162,17 @@ const Home = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                backgroundColor: 'rgba(30, 107, 62, 0.08)',
-                color: '#1e6b3e',
-                padding: '0.45rem 1.15rem',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                color: '#1e3a8a',
+                padding: '0.5rem 1.25rem',
                 borderRadius: '9999px',
                 fontSize: '0.88rem',
                 fontWeight: 700,
                 width: 'fit-content',
-                border: '1px solid rgba(30, 107, 62, 0.18)'
+                border: '1.5px solid rgba(59, 91, 219, 0.28)',
+                boxShadow: '0 4px 16px rgba(59, 91, 219, 0.16), 0 0 12px rgba(245, 158, 11, 0.1)'
               }}>
-                <ShieldCheck size={16} />
+                <ShieldCheck size={18} color="#3b5bdb" />
                 <span>100% Registered & Regulated Chit Fund</span>
               </div>
 
@@ -178,18 +180,22 @@ const Home = () => {
                 fontSize: 'clamp(2.4rem, 5.5vw, 3.8rem)',
                 fontWeight: 800,
                 lineHeight: 1.15,
-                color: '#0f172a',
-                letterSpacing: '-0.02em',
+                color: '#0d1b3e',
+                letterSpacing: '-0.025em',
                 margin: 0
               }}>
                 Grow Your Wealth with <br />
-                <span style={{ 
-                  color: '#1e6b3e', 
-                  background: 'linear-gradient(135deg, #124d2a 0%, #1e6b3e 50%, #ca8a04 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent'
-                }}>
-                  InaVolu Chit Funds
+                <span style={{ display: 'inline-block', position: 'relative' }}>
+                  <span style={{ 
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 40%, #4f46e5 70%, #d97706 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    color: 'transparent',
+                    display: 'inline-block',
+                  }}>
+                    InaVolu Chit Funds
+                  </span>
                 </span>
               </h1>
 
@@ -212,11 +218,11 @@ const Home = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.6rem',
-                    padding: '0.85rem 1.8rem',
-                    fontSize: '1rem',
+                    padding: '0.9rem 2rem',
+                    fontSize: '1.02rem',
                     fontWeight: 700,
-                    borderRadius: '12px',
-                    boxShadow: '0 8px 20px rgba(30, 107, 62, 0.25)',
+                    borderRadius: '14px',
+                    boxShadow: '0 8px 24px rgba(59, 91, 219, 0.38), 0 0 20px rgba(59, 91, 219, 0.28)',
                     textDecoration: 'none'
                   }}
                 >
@@ -231,14 +237,14 @@ const Home = () => {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.6rem',
-                    padding: '0.85rem 1.8rem',
-                    fontSize: '1rem',
+                    padding: '0.9rem 2rem',
+                    fontSize: '1.02rem',
                     fontWeight: 700,
-                    borderRadius: '12px',
+                    borderRadius: '14px',
                     textDecoration: 'none'
                   }}
                 >
-                  <Lock size={16} color="#1e6b3e" />
+                  <Lock size={16} color="#3b5bdb" />
                   <span>Sign In to Portal</span>
                 </Link>
               </div>
@@ -250,21 +256,21 @@ const Home = () => {
                 justifyContent: 'center',
                 gap: '2rem',
                 paddingTop: '1.75rem',
-                borderTop: '1px solid rgba(30, 107, 62, 0.12)',
+                borderTop: '1px solid rgba(59, 91, 219, 0.16)',
                 marginTop: '1.25rem',
                 width: '100%',
                 maxWidth: '700px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle2 size={18} color="#1e6b3e" />
+                  <CheckCircle2 size={18} color="#3b5bdb" />
                   <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>Govt. Registered</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle2 size={18} color="#1e6b3e" />
+                  <CheckCircle2 size={18} color="#3b5bdb" />
                   <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>Physical Document KYC</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <CheckCircle2 size={18} color="#1e6b3e" />
+                  <CheckCircle2 size={18} color="#3b5bdb" />
                   <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155' }}>Official Digital Receipts</span>
                 </div>
               </div>
@@ -276,23 +282,28 @@ const Home = () => {
       </section>
 
       {/* STATS HIGHLIGHT BAR */}
-      <section style={{ backgroundColor: '#ffffff', padding: '2.5rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+      <section style={{ 
+        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)', 
+        padding: '2.8rem 1.5rem', 
+        borderBottom: '1px solid #e2e8f0',
+        boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.03)'
+      }}>
         <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem', textAlign: 'center' }}>
           <div>
-            <h3 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1e6b3e', margin: 0 }}>₹10+ Crores</h3>
-            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.25rem' }}>Auction Payouts Disbursed</p>
+            <h3 style={{ fontSize: '2.3rem', fontWeight: 800, color: '#3b5bdb', margin: 0, textShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>₹10+ Crores</h3>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.35rem', fontWeight: 500 }}>Auction Payouts Disbursed</p>
           </div>
           <div>
-            <h3 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1e6b3e', margin: 0 }}>100% Legal</h3>
-            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.25rem' }}>Chit Funds Act Compliant</p>
+            <h3 style={{ fontSize: '2.3rem', fontWeight: 800, color: '#3b5bdb', margin: 0, textShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>100% Legal</h3>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.35rem', fontWeight: 500 }}>Chit Funds Act Compliant</p>
           </div>
           <div>
-            <h3 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1e6b3e', margin: 0 }}>2,500+</h3>
-            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.25rem' }}>Verified Chit Members</p>
+            <h3 style={{ fontSize: '2.3rem', fontWeight: 800, color: '#3b5bdb', margin: 0, textShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>2,500+</h3>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.35rem', fontWeight: 500 }}>Verified Chit Members</p>
           </div>
           <div>
-            <h3 style={{ fontSize: '2.2rem', fontWeight: 800, color: '#1e6b3e', margin: 0 }}>Zero</h3>
-            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.25rem' }}>Hidden Charges or Surprises</p>
+            <h3 style={{ fontSize: '2.3rem', fontWeight: 800, color: '#3b5bdb', margin: 0, textShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>Zero</h3>
+            <p style={{ color: '#64748b', fontSize: '0.92rem', marginTop: '0.35rem', fontWeight: 500 }}>Hidden Charges or Surprises</p>
           </div>
         </div>
       </section>
@@ -309,20 +320,26 @@ const Home = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.5rem',
-              backgroundColor: '#ecfdf5',
-              color: '#1e6b3e',
-              padding: '0.4rem 1.1rem',
+              backgroundColor: '#eef2ff',
+              color: '#1e3a8a',
+              padding: '0.45rem 1.2rem',
               borderRadius: '9999px',
               fontSize: '0.85rem',
-              fontWeight: 700,
-              marginBottom: '0.75rem'
+              fontWeight: 800,
+              marginBottom: '0.85rem',
+              border: '1px solid rgba(59, 91, 219, 0.28)',
+              boxShadow: '0 2px 10px rgba(59, 91, 219, 0.1)'
             }}>
-              <Coins size={16} />
+              <Coins size={16} color="#3b5bdb" />
               <span>TRANSPARENT SAVINGS & BORROWING</span>
             </div>
 
             <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              Available <span style={{ color: '#1e6b3e' }}>Chit Schemes & Plans</span>
+              Available <span style={{ 
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 50%, #d97706 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>Chit Schemes & Plans</span>
             </h2>
             <p style={{ color: '#64748b', fontSize: '1.05rem', maxWidth: '620px', margin: '0.75rem auto 0 auto' }}>
               Explore our verified monthly chit plans. Click <strong>Know More</strong> on any scheme to sign in and view complete auction schedules and enrollment criteria.
@@ -343,8 +360,8 @@ const Home = () => {
             <div style={{
               width: '42px',
               height: '42px',
-              border: '3px solid #bbf7d0',
-              borderTopColor: '#1e6b3e',
+              border: '3px solid #c7d2fe',
+              borderTopColor: '#3b5bdb',
               borderRadius: '50%',
               animation: 'spin 0.8s linear infinite'
             }} />
@@ -367,8 +384,8 @@ const Home = () => {
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              backgroundColor: '#ecfdf5',
-              color: '#1e6b3e',
+              backgroundColor: '#eef2ff',
+              color: '#3b5bdb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -408,33 +425,33 @@ const Home = () => {
             {schemes.map((scheme, idx) => (
               <ScrollAnimationWrapper key={scheme.id || idx}>
                 <div 
-                  className="card-premium"
+                  className="card-premium card-glow-emerald"
                   style={{
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    padding: '2rem 1.75rem',
-                    borderRadius: '20px',
-                    border: '1px solid #e2e8f0',
-                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.05)',
+                    padding: '2.2rem 1.85rem',
+                    borderRadius: '22px',
+                    border: '1.5px solid rgba(226, 232, 240, 0.9)',
+                    boxShadow: '0 12px 32px -8px rgba(15, 23, 42, 0.08), 0 0 16px rgba(59, 91, 219, 0.06)',
                     background: '#ffffff',
                     position: 'relative',
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                    transition: 'var(--transition-smooth)'
                   }}
                 >
                   <span style={{
                     position: 'absolute',
                     top: '-12px',
                     right: '24px',
-                    backgroundColor: scheme.status === 'active' ? '#0284c7' : '#2563eb',
+                    backgroundColor: scheme.status === 'active' ? '#3b5bdb' : '#d97706',
                     color: '#ffffff',
                     fontSize: '0.75rem',
-                    fontWeight: 700,
-                    padding: '0.25rem 0.85rem',
+                    fontWeight: 800,
+                    padding: '0.3rem 0.95rem',
                     borderRadius: '9999px',
                     letterSpacing: '0.04em',
-                    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                    boxShadow: scheme.status === 'active' ? '0 4px 14px rgba(59, 91, 219, 0.42)' : '0 4px 14px rgba(217, 119, 6, 0.4)',
                     textTransform: 'capitalize'
                   }}>
                     {scheme.status === 'upcoming' ? 'Enrolling Now' : (scheme.status || 'Active')}
@@ -444,46 +461,47 @@ const Home = () => {
                     <div style={{ marginBottom: '1.25rem' }}>
                       <span style={{
                         fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: '#1e6b3e',
+                        fontWeight: 800,
+                        color: '#3b5bdb',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                        letterSpacing: '0.06em'
                       }}>
                         Bid Auction Scheme
                       </span>
-                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#1e293b', margin: '0.35rem 0 0 0' }}>
+                      <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#0f172a', margin: '0.35rem 0 0 0' }}>
                         {scheme.name}
                       </h3>
                     </div>
 
                     {/* Value & Contribution Block */}
                     <div style={{
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #f1f5f9',
-                      borderRadius: '14px',
+                      background: 'linear-gradient(145deg, #f8fafc 0%, #f0f0ff 100%)',
+                      border: '1px solid rgba(59, 91, 219, 0.16)',
+                      borderRadius: '16px',
                       padding: '1.25rem',
                       marginBottom: '1.5rem',
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      gap: '1rem'
+                      gap: '1rem',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
                     }}>
                       <div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, display: 'block' }}>Chit Value</span>
-                        <strong style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e6b3e' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'block' }}>Chit Value</span>
+                        <strong style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e3a8a' }}>
                           ₹{(Number(scheme.chitValue) || 0).toLocaleString('en-IN')}
                         </strong>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, display: 'block' }}>Monthly Sub.</span>
-                        <strong style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ca8a04' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'block' }}>Monthly Sub.</span>
+                        <strong style={{ fontSize: '1.3rem', fontWeight: 800, color: '#d97706' }}>
                           ₹{(Number(scheme.monthlyContribution) || Math.round(Number(scheme.chitValue) / (Number(scheme.totalMembers) || Number(scheme.durationMonths) || 20))).toLocaleString('en-IN')}
                         </strong>
                       </div>
 
                       <div>
-                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 500, display: 'block' }}>Duration</span>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#334155' }}>
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, display: 'block' }}>Duration</span>
+                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: '#1e293b' }}>
                           {scheme.durationMonths} Months
                         </span>
                       </div>
@@ -505,15 +523,15 @@ const Home = () => {
                     {/* Key Highlights */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.75rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
-                        <CheckCircle2 size={16} color="#1e6b3e" />
+                        <CheckCircle2 size={16} color="#3b5bdb" />
                         <span>Regular monthly dividend payouts</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
-                        <CheckCircle2 size={16} color="#1e6b3e" />
+                        <CheckCircle2 size={16} color="#3b5bdb" />
                         <span>Superadmin verified KYC & payments</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
-                        <CheckCircle2 size={16} color="#1e6b3e" />
+                        <CheckCircle2 size={16} color="#3b5bdb" />
                         <span>Govt. Chit Act registered documentation</span>
                       </div>
                     </div>
@@ -548,22 +566,23 @@ const Home = () => {
         {/* Informative notice below chit schemes */}
         <div style={{
           marginTop: '3rem',
-          backgroundColor: '#e8f5e9',
-          border: '1.5px dashed rgba(30, 107, 62, 0.3)',
-          borderRadius: '16px',
-          padding: '1.5rem 2rem',
+          background: 'linear-gradient(135deg, #eef2ff 0%, #f0f0ff 100%)',
+          border: '1.5px dashed rgba(59, 91, 219, 0.38)',
+          borderRadius: '18px',
+          padding: '1.6rem 2rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '1.25rem'
+          gap: '1.25rem',
+          boxShadow: '0 4px 16px rgba(59, 91, 219, 0.06)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '260px', flex: 1 }}>
-            <div style={{ backgroundColor: '#1e6b3e', color: '#ffffff', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ background: 'linear-gradient(135deg, #3b5bdb 0%, #1e3a8a 100%)', color: '#ffffff', width: '44px', height: '44px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 12px rgba(59, 91, 219, 0.32)' }}>
               <Lock size={20} />
             </div>
             <div>
-              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e6b3e' }}>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#1e3a8a' }}>
                 Looking to Enroll or Bid in Upcoming Auctions?
               </h4>
               <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.86rem', color: '#4b5563' }}>
@@ -576,10 +595,10 @@ const Home = () => {
             to="/login"
             className="btn-primary"
             style={{
-              padding: '0.7rem 1.5rem',
-              fontSize: '0.9rem',
+              padding: '0.75rem 1.6rem',
+              fontSize: '0.92rem',
               fontWeight: 700,
-              borderRadius: '10px',
+              borderRadius: '12px',
               textDecoration: 'none',
               whiteSpace: 'nowrap'
             }}
@@ -599,14 +618,15 @@ const Home = () => {
                 alignItems: 'center',
                 gap: '0.5rem',
                 backgroundColor: '#fef3c7',
-                color: '#92400e',
-                padding: '0.4rem 1.1rem',
+                color: '#b45309',
+                padding: '0.45rem 1.2rem',
                 borderRadius: '9999px',
                 fontSize: '0.85rem',
-                fontWeight: 700,
-                marginBottom: '0.75rem'
+                fontWeight: 800,
+                marginBottom: '0.75rem',
+                border: '1px solid rgba(245, 158, 11, 0.25)'
               }}>
-                <Sparkles size={16} />
+                <Sparkles size={16} color="#d97706" />
                 <span>SIMPLE, SMART & BENEFICIAL</span>
               </div>
               <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#0f172a', margin: 0 }}>
@@ -620,41 +640,41 @@ const Home = () => {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
             
-            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem 1.5rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem' }}>
+            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '18px', padding: '2rem 1.5rem', boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.22)' }}>
                 1
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Join a Group</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>Join a Group</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 Choose a scheme matching your monthly budget. For example, 25 members contribute ₹10,000 monthly for 25 months to create a ₹2,50,000 pool.
               </p>
             </div>
 
-            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem 1.5rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem' }}>
+            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '18px', padding: '2rem 1.5rem', boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.22)' }}>
                 2
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Monthly Auction</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>Monthly Auction</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 Each month, an open auction is conducted. Members in urgent need of capital bid an auction discount to take home the prize money.
               </p>
             </div>
 
-            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem 1.5rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem' }}>
+            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '18px', padding: '2rem 1.5rem', boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.22)' }}>
                 3
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Earn Dividends</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>Earn Dividends</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 The auction discount (after company commission) is distributed equally among all non-winning members as dividend, reducing next month's payment!
               </p>
             </div>
 
-            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem 1.5rem' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem' }}>
+            <div className="card-premium" style={{ background: '#ffffff', borderRadius: '18px', padding: '2rem 1.5rem', boxShadow: '0 6px 20px rgba(15, 23, 42, 0.04)' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.25rem', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.22)' }}>
                 4
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Full Payout</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>Full Payout</h3>
               <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6 }}>
                 Members who do not bid throughout the cycle receive the full chit value at the final month, enjoying higher effective returns than standard savings.
               </p>
@@ -667,16 +687,25 @@ const Home = () => {
       {/* INTERACTIVE CHIT ESTIMATOR CALCULATOR */}
       <section style={{ padding: '5rem 1.5rem', maxWidth: '1000px', margin: '0 auto' }}>
         <ScrollAnimationWrapper>
-          <div className="card-premium" style={{
-            background: 'linear-gradient(145deg, #ffffff 0%, #eff6ff 100%)',
-            border: '2px solid rgba(30, 107, 62, 0.15)',
-            borderRadius: '24px',
-            padding: '2.5rem 2rem',
-            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.06)'
+          <div className="card-premium card-glow-emerald" style={{
+            background: 'linear-gradient(145deg, #ffffff 0%, #f0f0ff 40%, #fffbeb 100%)',
+            border: '2px solid rgba(59, 91, 219, 0.28)',
+            borderRadius: '28px',
+            padding: '2.8rem 2.2rem',
+            boxShadow: '0 24px 50px -10px rgba(59, 91, 219, 0.16), 0 10px 20px -5px rgba(245, 158, 11, 0.1)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              <div style={{ backgroundColor: '#1e6b3e', color: '#ffffff', padding: '0.6rem', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Calculator size={24} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', marginBottom: '1.75rem' }}>
+              <div style={{ 
+                background: 'linear-gradient(135deg, #3b5bdb 0%, #1e3a8a 100%)', 
+                color: '#ffffff', 
+                padding: '0.75rem', 
+                borderRadius: '14px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                boxShadow: '0 6px 16px rgba(59, 91, 219, 0.38)'
+              }}>
+                <Calculator size={26} />
               </div>
               <div>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
@@ -693,7 +722,7 @@ const Home = () => {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <label style={{ fontWeight: 600, fontSize: '0.95rem' }}>Desired Chit Value</label>
-                    <span style={{ fontWeight: 800, color: '#1e6b3e', fontSize: '1.1rem' }}>₹{calcAmount.toLocaleString()}</span>
+                    <span style={{ fontWeight: 800, color: '#3b5bdb', fontSize: '1.1rem' }}>₹{calcAmount.toLocaleString()}</span>
                   </div>
                   <input 
                     type="range"
@@ -702,7 +731,7 @@ const Home = () => {
                     step="50000"
                     value={calcAmount}
                     onChange={(e) => setCalcAmount(Number(e.target.value))}
-                    style={{ width: '100%', accentColor: '#1e6b3e', cursor: 'pointer' }}
+                    style={{ width: '100%', accentColor: '#3b5bdb', cursor: 'pointer' }}
                   />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem' }}>
                     <span>₹50,000</span>
@@ -714,7 +743,7 @@ const Home = () => {
                 <div style={{ marginBottom: '1.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <label style={{ fontWeight: 600, fontSize: '0.95rem' }}>Scheme Tenure</label>
-                    <span style={{ fontWeight: 800, color: '#1e6b3e', fontSize: '1.1rem' }}>{calcTenure} Months</span>
+                    <span style={{ fontWeight: 800, color: '#3b5bdb', fontSize: '1.1rem' }}>{calcTenure} Months</span>
                   </div>
                   <div style={{ display: 'flex', gap: '0.75rem' }}>
                     {[20, 25, 40, 50].map(m => (
@@ -727,7 +756,7 @@ const Home = () => {
                           padding: '0.6rem',
                           borderRadius: '10px',
                           border: calcTenure === m ? '2px solid #2563eb' : '1px solid #cbd5e1',
-                          backgroundColor: calcTenure === m ? '#ecfdf5' : '#ffffff',
+                          backgroundColor: calcTenure === m ? '#eef2ff' : '#ffffff',
                           color: calcTenure === m ? '#2563eb' : '#475569',
                           fontWeight: 700,
                           fontSize: '0.9rem',
@@ -758,7 +787,7 @@ const Home = () => {
 
                 <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid #f1f5f9' }}>
                   <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>Estimated Dividend Rebates</span>
-                  <strong style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1e6b3e' }}>
+                  <strong style={{ fontSize: '1.3rem', fontWeight: 800, color: '#3b5bdb' }}>
                     ~ ₹{estimatedDividends.toLocaleString()}
                   </strong>
                   <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Reduces net payments over the tenure</span>
@@ -766,7 +795,7 @@ const Home = () => {
 
                 <div style={{ marginBottom: '1.5rem' }}>
                   <span style={{ fontSize: '0.8rem', color: '#64748b', display: 'block' }}>Lump Sum Payout (Final Month)</span>
-                  <strong style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1e6b3e' }}>
+                  <strong style={{ fontSize: '1.5rem', fontWeight: 800, color: '#3b5bdb' }}>
                     ₹{calcAmount.toLocaleString()}
                   </strong>
                 </div>
@@ -800,50 +829,56 @@ const Home = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                backgroundColor: '#ecfdf5',
-                color: '#1e6b3e',
-                padding: '0.4rem 1.1rem',
+                backgroundColor: '#eef2ff',
+                color: '#1e3a8a',
+                padding: '0.45rem 1.2rem',
                 borderRadius: '9999px',
                 fontSize: '0.85rem',
-                fontWeight: 700,
-                marginBottom: '0.75rem'
+                fontWeight: 800,
+                marginBottom: '0.85rem',
+                border: '1px solid rgba(59, 91, 219, 0.28)',
+                boxShadow: '0 2px 10px rgba(59, 91, 219, 0.1)'
               }}>
-                <Award size={16} />
+                <Award size={16} color="#3b5bdb" />
                 <span>UNMATCHED SECURITY & TRUST</span>
               </div>
               <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Why InaVolu Chit Funds is Your Best Partner
+                Why InaVolu Chit Funds is Your <span style={{
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 50%, #d97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>Best Partner</span>
               </h2>
             </div>
           </ScrollAnimationWrapper>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
             
-            <div className="card-premium" style={{ padding: '2rem', borderRadius: '18px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#e8f5e9', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <ShieldCheck size={26} />
+            <div className="card-premium" style={{ padding: '2.2rem 2rem', borderRadius: '20px', boxShadow: '0 8px 25px rgba(15, 23, 42, 0.05)' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.28)', boxShadow: '0 4px 12px rgba(59, 91, 219, 0.16)' }}>
+                <ShieldCheck size={28} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Strict KYC Approval</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#0f172a' }}>Strict KYC Approval</h3>
               <p style={{ color: '#64748b', fontSize: '0.92rem', lineHeight: 1.6 }}>
                 Every applicant undergoes physical Aadhaar and PAN verification by our Superadmin before being admitted to any chit pool, safeguarding every member’s capital.
               </p>
             </div>
 
-            <div className="card-premium" style={{ padding: '2rem', borderRadius: '18px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#fef3c7', color: '#ca8a04', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <FileCheck size={26} />
+            <div className="card-premium" style={{ padding: '2.2rem 2rem', borderRadius: '20px', boxShadow: '0 8px 25px rgba(15, 23, 42, 0.05)' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', color: '#b45309', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: '1px solid rgba(245, 158, 11, 0.25)', boxShadow: '0 4px 12px rgba(245, 158, 11, 0.15)' }}>
+                <FileCheck size={28} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Official Digital Receipts</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#0f172a' }}>Official Digital Receipts</h3>
               <p style={{ color: '#64748b', fontSize: '0.92rem', lineHeight: 1.6 }}>
                 Instant downloadable, government-compliant official receipts with transaction references for every installment payment made.
               </p>
             </div>
 
-            <div className="card-premium" style={{ padding: '2rem', borderRadius: '18px' }}>
-              <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#ecfdf5', color: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
-                <TrendingUp size={26} />
+            <div className="card-premium" style={{ padding: '2.2rem 2rem', borderRadius: '20px', boxShadow: '0 8px 25px rgba(15, 23, 42, 0.05)' }}>
+              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'linear-gradient(135deg, #eef2ff 0%, #d1fae5 100%)', color: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem', border: '1px solid rgba(59, 91, 219, 0.28)', boxShadow: '0 4px 12px rgba(59, 91, 219, 0.16)' }}>
+                <TrendingUp size={28} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>Transparent Auction Ledger</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', color: '#0f172a' }}>Transparent Auction Ledger</h3>
               <p style={{ color: '#64748b', fontSize: '0.92rem', lineHeight: 1.6 }}>
                 Every monthly auction winning bid, foreman commission, and member dividend share is permanently recorded and visible directly inside your dashboard.
               </p>
@@ -862,19 +897,24 @@ const Home = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                backgroundColor: '#ecfdf5',
-                color: '#1e6b3e',
-                padding: '0.4rem 1.1rem',
+                backgroundColor: '#eef2ff',
+                color: '#1e3a8a',
+                padding: '0.45rem 1.2rem',
                 borderRadius: '9999px',
                 fontSize: '0.85rem',
-                fontWeight: 700,
-                marginBottom: '0.75rem'
+                fontWeight: 800,
+                marginBottom: '0.85rem',
+                border: '1px solid rgba(59, 91, 219, 0.28)'
               }}>
-                <HelpCircle size={16} />
+                <HelpCircle size={16} color="#3b5bdb" />
                 <span>FREQUENTLY ASKED QUESTIONS</span>
               </div>
               <h2 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, color: '#0f172a', margin: 0 }}>
-                Got Questions? <span style={{ color: '#1e6b3e' }}>We Have Answers</span>
+                Got Questions? <span style={{
+                  background: 'linear-gradient(135deg, #1e3a8a 0%, #3b5bdb 50%, #d97706 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>We Have Answers</span>
               </h2>
               <p style={{ color: '#64748b', fontSize: '1.05rem', maxWidth: '600px', margin: '0.75rem auto 0 auto' }}>
                 Everything you need to know about our government-registered chit fund cycles, monthly auctions, and dividend distributions.
@@ -891,8 +931,8 @@ const Home = () => {
                     style={{
                       backgroundColor: '#ffffff',
                       borderRadius: '16px',
-                      border: isOpen ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
-                      boxShadow: isOpen ? '0 10px 25px rgba(30, 107, 62, 0.08)' : '0 2px 8px rgba(0,0,0,0.02)',
+                      border: isOpen ? '1.5px solid #3b5bdb' : '1px solid #e2e8f0',
+                      boxShadow: isOpen ? '0 12px 28px rgba(59, 91, 219, 0.12)' : '0 2px 8px rgba(0,0,0,0.02)',
                       transition: 'all 0.25s ease',
                       overflow: 'hidden'
                     }}
@@ -916,7 +956,7 @@ const Home = () => {
                       <span style={{
                         fontSize: '1.05rem',
                         fontWeight: 700,
-                        color: isOpen ? '#2563eb' : '#1e293b'
+                        color: isOpen ? '#3b5bdb' : '#1e293b'
                       }}>
                         {faq.question}
                       </span>
@@ -924,8 +964,8 @@ const Home = () => {
                         width: '32px',
                         height: '32px',
                         borderRadius: '50%',
-                        backgroundColor: isOpen ? '#ecfdf5' : '#f1f5f9',
-                        color: isOpen ? '#2563eb' : '#64748b',
+                        backgroundColor: isOpen ? '#eef2ff' : '#f1f5f9',
+                        color: isOpen ? '#3b5bdb' : '#64748b',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -957,12 +997,13 @@ const Home = () => {
           <div style={{
             marginTop: '3rem',
             textAlign: 'center',
-            backgroundColor: '#e8f5e9',
-            border: '1px solid #bbf7d0',
-            borderRadius: '16px',
-            padding: '1.5rem 2rem'
+            background: 'linear-gradient(135deg, #eef2ff 0%, #f0f0ff 100%)',
+            border: '1.5px solid rgba(59, 91, 219, 0.28)',
+            borderRadius: '18px',
+            padding: '1.6rem 2rem',
+            boxShadow: '0 4px 16px rgba(59, 91, 219, 0.06)'
           }}>
-            <p style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#1e6b3e' }}>
+            <p style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: '#1e3a8a' }}>
               Still have questions about a specific scheme or enrollment criteria?
             </p>
             <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -989,13 +1030,13 @@ const Home = () => {
 
       {/* FOOTER CALL TO ACTION */}
       <footer style={{
-        backgroundColor: '#052e16',
-        background: 'linear-gradient(180deg, #092c18 0%, #031c0e 100%)',
+        background: 'radial-gradient(ellipse at 50% -20%, rgba(59, 91, 219, 0.28) 0%, transparent 60%), linear-gradient(180deg, #172554 0%, #022c22 40%, #0f172a 100%)',
         color: '#ffffff',
         padding: '5rem 1.5rem 2.5rem 1.5rem',
-        borderTop: '1px solid rgba(245, 158, 11, 0.25)',
+        borderTop: '1px solid rgba(245, 158, 11, 0.35)',
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.15)'
       }}>
         {/* Subtle background glow */}
         <div style={{
@@ -1003,9 +1044,9 @@ const Home = () => {
           top: 0,
           left: '50%',
           transform: 'translateX(-50%)',
-          width: '700px',
-          height: '250px',
-          background: 'radial-gradient(circle, rgba(30, 107, 62, 0.15) 0%, transparent 70%)',
+          width: '800px',
+          height: '280px',
+          background: 'radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(59, 91, 219, 0.12) 50%, transparent 80%)',
           pointerEvents: 'none'
         }} />
 
@@ -1034,21 +1075,21 @@ const Home = () => {
 
           {/* Quick Links Column */}
           <div>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem', borderBottom: '2px solid #1e6b3e', paddingBottom: '0.5rem', display: 'inline-block' }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem', borderBottom: '2px solid #3b5bdb', paddingBottom: '0.5rem', display: 'inline-block' }}>
               Quick Navigation
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <a href="#" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.92rem', transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ChevronRight size={14} color="#16a34a" /> Home
+                <ChevronRight size={14} color="#4f6ee8" /> Home
               </a>
               <Link to="/about" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.92rem', transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ChevronRight size={14} color="#16a34a" /> About InaVolu
+                <ChevronRight size={14} color="#4f6ee8" /> About InaVolu
               </Link>
               <a href="#chit-plans" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.92rem', transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ChevronRight size={14} color="#16a34a" /> Schemes & Plans
+                <ChevronRight size={14} color="#4f6ee8" /> Schemes & Plans
               </a>
               <Link to="/contact" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.92rem', transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                <ChevronRight size={14} color="#16a34a" /> Contact Helpdesk
+                <ChevronRight size={14} color="#4f6ee8" /> Contact Helpdesk
               </Link>
               <Link to="/login" style={{ color: '#f59e0b', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ChevronRight size={14} color="#f59e0b" /> Member Portal Login
@@ -1058,7 +1099,7 @@ const Home = () => {
 
           {/* Registered Office & Contact Column */}
           <div>
-            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem', borderBottom: '2px solid #1e6b3e', paddingBottom: '0.5rem', display: 'inline-block' }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem', borderBottom: '2px solid #3b5bdb', paddingBottom: '0.5rem', display: 'inline-block' }}>
               Registered Office
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.55 }}>

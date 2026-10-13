@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
@@ -130,7 +130,7 @@ const BrowseChits = () => {
           fontSize: '0.9rem',
           backgroundColor: message.type === 'success' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
           border: `1px solid ${message.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'}`,
-          color: message.type === 'success' ? '#065f46' : '#b91c1c'
+          color: message.type === 'success' ? '#1e3a8a' : '#b91c1c'
         }}>
           {message.text}
         </div>

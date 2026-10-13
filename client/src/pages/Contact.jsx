@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
 import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
 
@@ -88,7 +88,7 @@ const Contact = () => {
                 backgroundColor: 'rgba(16, 185, 129, 0.08)',
                 border: '1px solid var(--color-success)',
                 borderRadius: 'var(--radius-md)',
-                color: '#065f46'
+                color: '#1e3a8a'
               }}>
                 <CheckCircle size={48} style={{ margin: '0 auto 1rem auto' }} />
                 <h3 style={{ fontWeight: 700, marginBottom: '0.5rem' }}>Message Sent!</h3>

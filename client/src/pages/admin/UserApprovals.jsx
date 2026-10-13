@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
 import { UserCheck, ShieldAlert, FileText, Check, X, Eye, RefreshCw } from 'lucide-react';
@@ -129,7 +129,7 @@ const UserApprovals = () => {
           fontSize: '0.9rem',
           backgroundColor: message.type === 'success' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
           border: `1px solid ${message.type === 'success' ? 'var(--color-success)' : 'var(--color-danger)'}`,
-          color: message.type === 'success' ? '#065f46' : '#b91c1c'
+          color: message.type === 'success' ? '#1e3a8a' : '#b91c1c'
         }}>
           {message.text}
         </div>
@@ -295,7 +295,7 @@ const UserApprovals = () => {
                       justifyContent: 'center',
                       gap: '0.25rem',
                       background: 'var(--color-success)',
-                      borderColor: '#059669',
+                      borderColor: '#3b5bdb',
                       color: '#fff',
                       padding: '0.6rem'
                     }}

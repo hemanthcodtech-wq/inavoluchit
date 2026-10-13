@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
@@ -876,7 +876,7 @@ const ChitManager = () => {
                                 ? '1.5px solid #93c5fd' 
                                 : '1.5px solid #fde68a',
                               backgroundColor: chit.status === 'active' 
-                                ? '#ecfdf5' 
+                                ? '#eef2ff' 
                                 : chit.status === 'completed' 
                                 ? '#eff6ff' 
                                 : '#fefce8',
@@ -951,15 +951,15 @@ const ChitManager = () => {
                           padding: '0.45rem 0.85rem',
                           borderRadius: '8px',
                           border: '1px solid rgba(37, 99, 235, 0.25)',
-                          backgroundColor: '#ecfdf5',
-                          color: '#065f46',
+                          backgroundColor: '#eef2ff',
+                          color: '#1e3a8a',
                           cursor: 'pointer',
                           fontSize: '0.82rem',
                           fontWeight: 700,
                           transition: 'all 0.2s ease'
                         }}
                         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#d1fae5'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ecfdf5'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#eef2ff'; }}
                       >
                         <UserPlus size={14} />
                         <span>Add User</span>
@@ -2093,7 +2093,7 @@ const ChitManager = () => {
                               padding: '0.65rem 0.85rem',
                               borderBottom: '1px solid #f3f4f6',
                               cursor: 'pointer',
-                              backgroundColor: isSelected ? '#ecfdf5' : '#fff',
+                              backgroundColor: isSelected ? '#eef2ff' : '#fff',
                               transition: 'all 0.15s ease'
                             }}
                           >

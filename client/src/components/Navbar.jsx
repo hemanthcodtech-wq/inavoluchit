@@ -65,14 +65,16 @@ const Navbar = () => {
         position: 'sticky',
         top: 0,
         zIndex: 100,
-        padding: '0.5rem 2rem',
+        padding: '0.65rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         borderRadius: '0 0 var(--radius-md) var(--radius-md)',
-        backgroundColor: 'rgba(251, 252, 250, 0.98)',
-        borderBottom: '1px solid rgba(10, 30, 59, 0.08)',
-        boxShadow: '0 2px 12px rgba(0,0,0,0.04)'
+        backgroundColor: 'rgba(255, 255, 255, 0.94)',
+        backdropFilter: 'blur(18px)',
+        WebkitBackdropFilter: 'blur(18px)',
+        borderBottom: '1px solid rgba(59, 91, 219, 0.12)',
+        boxShadow: '0 4px 24px -2px rgba(13, 27, 62, 0.07), 0 2px 8px -1px rgba(59, 91, 219, 0.08)'
       }}>
         <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
           <img 
@@ -509,7 +511,7 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <Home size={18} color="#1e6b3e" />
+                    <Home size={18} color="#3b5bdb" />
                     <span>Home</span>
                   </NavLink>
                   <NavLink
@@ -517,7 +519,7 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <HelpCircle size={18} color="#1e6b3e" />
+                    <HelpCircle size={18} color="#3b5bdb" />
                     <span>About Us</span>
                   </NavLink>
                   <a
@@ -532,7 +534,7 @@ const Navbar = () => {
                     }}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <Coins size={18} color="#1e6b3e" />
+                    <Coins size={18} color="#3b5bdb" />
                     <span>Chit Plans</span>
                   </a>
                   <a
@@ -547,7 +549,7 @@ const Navbar = () => {
                     }}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <Sparkles size={18} color="#1e6b3e" />
+                    <Sparkles size={18} color="#3b5bdb" />
                     <span>How It Works</span>
                   </a>
                   <a
@@ -562,7 +564,7 @@ const Navbar = () => {
                     }}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <Award size={18} color="#1e6b3e" />
+                    <Award size={18} color="#3b5bdb" />
                     <span>Benefits</span>
                   </a>
                   <a
@@ -577,7 +579,7 @@ const Navbar = () => {
                     }}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <HelpCircle size={18} color="#1e6b3e" />
+                    <HelpCircle size={18} color="#3b5bdb" />
                     <span>FAQ</span>
                   </a>
                   <NavLink
@@ -585,7 +587,7 @@ const Navbar = () => {
                     onClick={() => setIsOpen(false)}
                     style={{ padding: '0.75rem', borderRadius: '10px', textDecoration: 'none', color: '#1e293b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                   >
-                    <PhoneCall size={18} color="#1e6b3e" />
+                    <PhoneCall size={18} color="#3b5bdb" />
                     <span>Contact Us</span>
                   </NavLink>
 
@@ -669,11 +671,11 @@ const Navbar = () => {
           padding: 0.35rem 0.2rem;
         }
         .nav-hover:hover {
-          color: #1e6b3e;
+          color: #3b5bdb;
           transform: translateY(-1px);
         }
         .desktop-nav-item.active {
-          color: #1e6b3e !important;
+          color: #3b5bdb !important;
           font-weight: 800 !important;
         }
         .desktop-nav-item.active::after {
@@ -683,23 +685,24 @@ const Navbar = () => {
           left: 0;
           right: 0;
           height: 2.5px;
-          background: linear-gradient(90deg, #1e6b3e 0%, #ca8a04 100%);
+          background: linear-gradient(90deg, #3b5bdb 0%, #d97706 100%);
           border-radius: 9999px;
-          box-shadow: 0 1px 4px rgba(30, 107, 62, 0.4);
+          box-shadow: 0 2px 8px rgba(59, 91, 219, 0.45);
         }
         .mobile-drawer-link:hover {
-          background-color: #f8fafc;
+          background-color: #f1f5f9;
         }
         .mobile-drawer-link.active {
-          background: #e8f5e9 !important;
-          border-left: 3.5px solid #1e6b3e !important;
+          background: linear-gradient(90deg, #eef2ff 0%, #f0f0ff 100%) !important;
+          border-left: 4px solid #3b5bdb !important;
         }
         .mobile-drawer-link.active .drawer-icon-box {
-          background-color: #1e6b3e !important;
+          background-color: #3b5bdb !important;
           color: #ffffff !important;
+          box-shadow: 0 4px 12px rgba(59, 91, 219, 0.38) !important;
         }
         .mobile-drawer-link.active span {
-          color: #1e6b3e !important;
+          color: #1e3a8a !important;
           font-weight: 700 !important;
         }
         @keyframes fadeIn {
@@ -721,11 +724,14 @@ const Navbar = () => {
             max-height: 72px !important;
             padding: 0.35rem 1rem !important;
             z-index: 99999 !important;
-            background-color: rgba(251, 252, 250, 0.98) !important;
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
             -webkit-transform: translateZ(0) !important;
             transform: translateZ(0) !important;
             will-change: transform !important;
             box-sizing: border-box !important;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06) !important;
           }
           .nav-brand-logo {
             height: 48px !important;

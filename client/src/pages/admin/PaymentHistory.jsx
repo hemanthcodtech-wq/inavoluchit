@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
 import {
@@ -503,12 +503,12 @@ const PaymentHistory = () => {
           </div>
 
           <div style={{ backgroundColor: '#fff', borderRadius: '1rem', padding: '1.15rem 1.25rem', border: '1px solid #f3f4f6', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+            <div style={{ width: '46px', height: '46px', borderRadius: '12px', backgroundColor: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b5bdb' }}>
               <CheckCircle size={22} />
             </div>
             <div>
               <span style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Approved Payments</span>
-              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#059669', margin: 0 }}>{metrics.approvedCount}</h3>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#3b5bdb', margin: 0 }}>{metrics.approvedCount}</h3>
             </div>
           </div>
 

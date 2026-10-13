@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -145,7 +145,7 @@ const ForgotPassword = () => {
       justifyContent: 'center',
       padding: '2rem 1rem',
       backgroundColor: '#fbfcf9',
-      background: 'radial-gradient(circle at 50% 20%, #f0fdf4 0%, #fbfcf9 100%)'
+      background: 'radial-gradient(circle at 50% 20%, #f0f0ff 0%, #fbfcf9 100%)'
     }}>
       <div className="glass-panel card-premium" style={{
         width: '100%',
@@ -304,7 +304,7 @@ const ForgotPassword = () => {
                   letterSpacing: '0.4em',
                   borderRadius: '10px',
                   border: '2px solid var(--color-primary-green)',
-                  backgroundColor: '#f0fdf4',
+                  backgroundColor: '#f0f0ff',
                   color: 'var(--color-primary-green)',
                   outline: 'none'
                 }}
@@ -434,13 +434,13 @@ const ForgotPassword = () => {
               height: '64px',
               borderRadius: '50%',
               backgroundColor: '#dbeafe',
-              color: '#1e6b3e',
+              color: '#3b5bdb',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               border: '2px solid #a5b4fc'
             }}>
-              <CheckCircle size={36} color="#1e6b3e" />
+              <CheckCircle size={36} color="#3b5bdb" />
             </div>
 
             <p style={{ fontSize: '0.95rem', color: '#374151', margin: 0, fontWeight: 600 }}>

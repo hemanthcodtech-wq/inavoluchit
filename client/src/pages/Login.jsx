@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -96,12 +96,12 @@ const ChitIllustration = () => (
     {/* Security Badges floating */}
     <g transform="translate(390, 80)">
       <circle cx="20" cy="20" r="20" fill="#fff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" />
-      <path d="M14 18l4 4 8-8" stroke="#1e6b3e" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M14 18l4 4 8-8" stroke="#3b5bdb" strokeWidth="2.5" strokeLinecap="round" />
     </g>
     <g transform="translate(130, 220)">
       <circle cx="20" cy="20" r="20" fill="#fff" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.1))" />
-      <path d="M20 10l9 5v7c0 5-4 10-9 12-5-2-9-7-9-12v-7l9-5z" fill="#1e6b3e" opacity="0.2" />
-      <path d="M20 12l7 4v6c0 4-3 8-7 10-4-2-7-6-7-10v-6l7-4z" fill="#1e6b3e" />
+      <path d="M20 10l9 5v7c0 5-4 10-9 12-5-2-9-7-9-12v-7l9-5z" fill="#3b5bdb" opacity="0.2" />
+      <path d="M20 12l7 4v6c0 4-3 8-7 10-4-2-7-6-7-10v-6l7-4z" fill="#3b5bdb" />
       <path d="M17 20l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
     </g>
   </svg>
@@ -248,7 +248,7 @@ const Login = () => {
           
           {/* Text Content */}
           <div style={{ flex: 1, maxWidth: '400px', zIndex: 10 }}>
-            <h1 className="animate-fade-in-up delay-200" style={{ fontSize: '3rem', fontWeight: 800, color: '#1e6b3e', lineHeight: 1.15, marginBottom: '1.25rem', textShadow: '0 2px 10px rgba(37, 99, 235, 0.05)' }}>
+            <h1 className="animate-fade-in-up delay-200" style={{ fontSize: '3rem', fontWeight: 800, color: '#3b5bdb', lineHeight: 1.15, marginBottom: '1.25rem', textShadow: '0 2px 10px rgba(37, 99, 235, 0.05)' }}>
               Secure Chit <br /> Management
             </h1>
             <p className="animate-fade-in-up delay-300" style={{ color: '#4b5563', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2.5rem', maxWidth: '300px', fontWeight: 500 }}>
@@ -263,14 +263,14 @@ const Login = () => {
               border: '1px solid rgba(37, 99, 235, 0.1)',
               padding: '0.5rem 1rem',
               borderRadius: 'var(--radius-full)',
-              color: '#1e6b3e',
+              color: '#3b5bdb',
               fontWeight: 700,
               fontSize: '0.9rem',
               boxShadow: '0 4px 15px rgba(37, 99, 235, 0.1)',
               transition: 'all 0.3s ease',
               cursor: 'default'
             }} onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'} onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}>
-              <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#1e6b3e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#3b5bdb', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                 <Check size={12} strokeWidth={3.5} />
               </div>
               <span>Trusted by 1000+ Users</span>
@@ -312,7 +312,7 @@ const Login = () => {
             
             {/* Text Content (Left) */}
             <div style={{ flex: 1, zIndex: 10, minWidth: 0 }}>
-              <h1 className="animate-fade-in-up delay-200" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e6b3e', lineHeight: 1.2, margin: '0 0 0.4rem 0' }}>
+              <h1 className="animate-fade-in-up delay-200" style={{ fontSize: '1.25rem', fontWeight: 800, color: '#3b5bdb', lineHeight: 1.2, margin: '0 0 0.4rem 0' }}>
                 Secure Chit Management
               </h1>
               <p className="animate-fade-in-up delay-300" style={{ color: '#4b5563', fontSize: '0.78rem', lineHeight: 1.35, margin: '0 0 0.65rem 0', fontWeight: 500 }}>
@@ -327,7 +327,7 @@ const Login = () => {
                   backgroundColor: '#dbeafe',
                   padding: '0.35rem 0.65rem',
                   borderRadius: '9999px',
-                  color: '#1e6b3e',
+                  color: '#3b5bdb',
                   fontWeight: 700,
                   fontSize: '0.72rem',
                   boxShadow: '0 2px 8px rgba(37, 99, 235, 0.08)'
@@ -370,7 +370,7 @@ const Login = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                color: '#1e6b3e',
+                color: '#3b5bdb',
                 fontSize: '0.88rem',
                 fontWeight: 600,
                 backgroundColor: '#eff6ff',
@@ -397,7 +397,7 @@ const Login = () => {
           <h2 style={{
             fontSize: '1.75rem',
             fontWeight: 800,
-            color: '#1e6b3e',
+            color: '#3b5bdb',
             marginBottom: '0.5rem',
             textAlign: 'center'
           }}>
@@ -422,12 +422,12 @@ const Login = () => {
               borderRadius: 'var(--radius-md)',
               padding: '0.85rem 1rem',
               marginBottom: '1.5rem',
-              color: '#1e6b3e',
+              color: '#3b5bdb',
               fontSize: '0.88rem',
               lineHeight: 1.4,
               boxShadow: '0 2px 8px rgba(37, 99, 235, 0.05)'
             }}>
-              <ShieldCheck size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#1e6b3e' }} />
+              <ShieldCheck size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#3b5bdb' }} />
               <div>
                 <strong style={{ display: 'block', marginBottom: '0.2rem' }}>Member Sign In Required</strong>
                 <span>{noticeMsg}</span>
@@ -463,8 +463,8 @@ const Login = () => {
                 padding: '0.75rem 1rem',
                 fontSize: '0.95rem',
                 fontWeight: 600,
-                color: loginMode === 'password' ? '#1e6b3e' : '#6b7280',
-                borderBottom: loginMode === 'password' ? '2px solid #1e6b3e' : '2px solid transparent',
+                color: loginMode === 'password' ? '#3b5bdb' : '#6b7280',
+                borderBottom: loginMode === 'password' ? '2px solid #3b5bdb' : '2px solid transparent',
                 transition: 'all 0.2s ease',
               }}
             >
@@ -478,8 +478,8 @@ const Login = () => {
                 padding: '0.75rem 1rem',
                 fontSize: '0.95rem',
                 fontWeight: 600,
-                color: loginMode === 'otp' ? '#1e6b3e' : '#6b7280',
-                borderBottom: loginMode === 'otp' ? '2px solid #1e6b3e' : '2px solid transparent',
+                color: loginMode === 'otp' ? '#3b5bdb' : '#6b7280',
+                borderBottom: loginMode === 'otp' ? '2px solid #3b5bdb' : '2px solid transparent',
                 transition: 'all 0.2s ease',
               }}
             >
@@ -509,7 +509,7 @@ const Login = () => {
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
-                  <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: '#1e6b3e', fontWeight: 600 }}>Forgot Password?</Link>
+                  <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: '#3b5bdb', fontWeight: 600 }}>Forgot Password?</Link>
                 </div>
 
                 <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', height: '48px', borderRadius: 'var(--radius-full)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', fontSize: '1rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(10, 30, 59, 0.2)' }}>
@@ -586,7 +586,7 @@ const Login = () => {
               </form>
 
               <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1.5rem' }}>
-                <button onClick={() => setOtpStep(1)} type="button" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1e6b3e', background: 'none', border: 'none', cursor: 'pointer' }}>
+                <button onClick={() => setOtpStep(1)} type="button" style={{ fontSize: '0.85rem', fontWeight: 600, color: '#3b5bdb', background: 'none', border: 'none', cursor: 'pointer' }}>
                   Change Email Address
                 </button>
               </div>
@@ -613,7 +613,7 @@ const Login = () => {
                 textDecoration: 'none',
                 transition: 'color 0.15s ease'
               }}
-              onMouseOver={(e) => { e.currentTarget.style.color = '#1e6b3e'; }}
+              onMouseOver={(e) => { e.currentTarget.style.color = '#3b5bdb'; }}
               onMouseOut={(e) => { e.currentTarget.style.color = '#64748b'; }}
             >
               <ArrowLeft size={16} />

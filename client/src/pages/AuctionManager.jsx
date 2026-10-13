@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
 import {
@@ -1206,7 +1206,7 @@ const AuctionManager = () => {
                   type="submit"
                   disabled={submitting}
                   style={{
-                    backgroundColor: '#10b981',
+                    backgroundColor: '#4f6ee8',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '9999px',
@@ -1220,8 +1220,8 @@ const AuctionManager = () => {
                     boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
                     transition: 'all 0.2s ease'
                   }}
-                  onMouseOver={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#059669')}
-                  onMouseOut={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#10b981')}
+                  onMouseOver={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#3b5bdb')}
+                  onMouseOut={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#4f6ee8')}
                 >
                   <Check size={18} />
                   <span>{submitting ? 'RECORDING...' : (auctionType === 'fixed' ? 'RECORD FIXED CLAIM' : 'RECORD AUCTION RESULT')}</span>
@@ -1303,7 +1303,7 @@ const AuctionManager = () => {
                     <span style={{ color: '#bfdbfe', fontSize: '0.82rem', fontWeight: 600, display: 'block' }}>Guaranteed Winner Payout</span>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>Month {calcResults.monthNumber} Slot</span>
                   </div>
-                  <strong style={{ color: '#4ade80', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
+                  <strong style={{ color: '#818cf8', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
@@ -1347,7 +1347,7 @@ const AuctionManager = () => {
                     <span style={{ color: '#bfdbfe', fontSize: '0.82rem', fontWeight: 600, display: 'block' }}>Net Winner Payout (Take-Home)</span>
                     <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>Amount transferred to winner</span>
                   </div>
-                  <strong style={{ color: '#4ade80', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
+                  <strong style={{ color: '#818cf8', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
@@ -1396,7 +1396,7 @@ const AuctionManager = () => {
             paddingTop: '1.25rem',
             borderTop: '1px solid rgba(255, 255, 255, 0.08)',
             marginTop: '1.5rem',
-            color: '#34d399',
+            color: '#818cf8',
             fontSize: '0.78rem',
             fontWeight: 600
           }}>

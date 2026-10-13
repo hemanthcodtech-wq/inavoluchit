@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
@@ -607,9 +607,9 @@ const AllUsers = () => {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.25rem',
-                            backgroundColor: '#ecfdf5',
-                            color: '#065f46',
-                            border: '1px solid #a7f3d0',
+                            backgroundColor: '#eef2ff',
+                            color: '#1e3a8a',
+                            border: '1px solid #c7d2fe',
                             fontSize: '0.72rem',
                             fontWeight: 700,
                             padding: '0.2rem 0.55rem',

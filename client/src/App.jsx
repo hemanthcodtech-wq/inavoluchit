@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+﻿import React, { Component } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -324,7 +324,7 @@ const AdminEntry = () => {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0f3922' }}>
-        <p style={{ fontSize: '1.1rem', fontWeight: 500, color: '#4ade80' }}>Loading Admin Portal...</p>
+        <p style={{ fontSize: '1.1rem', fontWeight: 500, color: '#818cf8' }}>Loading Admin Portal...</p>
       </div>
     );
   }
