@@ -11,6 +11,9 @@ const paymentSchema = new mongoose.Schema({
   proofPublicId: String,
   status: { type: String, default: 'pending' },
   remarks: { type: String, default: '' },
+  paymentDate: { type: Date, default: Date.now },
+  paymentMode: { type: String, default: 'Cash' },
+  recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   verifiedAt: Date,
 }, { timestamps: true });
 

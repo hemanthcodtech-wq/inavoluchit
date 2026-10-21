@@ -25,6 +25,8 @@ const userSchema = new mongoose.Schema({
   aadharPublicId: String,
   panImgUrl: String,
   panPublicId: String,
+  profileImgUrl: String,
+  profilePublicId: String,
 
   nomineeName: String,
   nomineeRelationship: String,

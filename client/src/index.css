@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
   /* =========================================================
@@ -838,9 +838,9 @@ button {
 
   /* 10. Tables & Ledgers: Smooth horizontal scroll without page blowout */
   .table-responsive,
-  div:has(> table),
-  div[style*="overflowX"],
-  div[style*="overflow-x"] {
+  div:has(> table):not(.hidden-on-mobile),
+  div[style*="overflowX"]:not(.hidden-on-mobile),
+  div[style*="overflow-x"]:not(.hidden-on-mobile) {
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
@@ -881,6 +881,51 @@ button {
   input, select, textarea {
     font-size: 0.9rem !important;
     max-width: 100% !important;
+  }
+
+  /* 13. All Users Directory Member Cards — Clean vertical stack & grid on mobile */
+  .admin-user-item-card {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.9rem !important;
+    padding: 0.9rem 0.85rem !important;
+  }
+
+  .admin-user-info-col {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+  }
+
+  .admin-user-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    border-top: 1px solid #f1f5f9 !important;
+    padding-top: 0.75rem !important;
+    margin-top: 0.2rem !important;
+  }
+
+  .admin-user-enrolled-badge {
+    height: 32px !important;
+    padding: 0 0.65rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  .admin-user-btn {
+    height: 32px !important;
+    padding: 0 0.75rem !important;
+    font-size: 0.75rem !important;
+    flex: 1 1 auto !important;
+    min-width: 105px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
   }
 }
 

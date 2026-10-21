@@ -24,6 +24,7 @@ import {
 import paymentQrImg from '../assets/payment-qr.jpeg';
 import { generatePaymentReceiptPDF } from '../utils/receiptGenerator';
 import ReceiptModal from '../components/ReceiptModal';
+import { formatChitMonthYear, formatChitMonthWithNum } from '../utils/chitDateUtils';
 
 const MyActiveChits = () => {
   const { user, token, API_URL } = useAuth();
@@ -660,7 +661,9 @@ const MyActiveChits = () => {
                                     {/* Top row: Month + Status badge */}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1f2937' }}>Month {monthNum}</span>
+                                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#1f2937' }}>
+                                          {formatChitMonthYear(chit, monthNum)} <span style={{ fontSize: '0.72rem', color: '#6b7280', fontWeight: 500 }}>(M{monthNum})</span>
+                                        </span>
                                         {isCurrent && <span style={{ fontSize: '0.58rem', backgroundColor: '#2563eb', color: '#fff', padding: '0.1rem 0.45rem', borderRadius: '1rem', fontWeight: 700, letterSpacing: '0.02em' }}>CURRENT</span>}
                                       </div>
                                       <span style={{ fontSize: '0.68rem', fontWeight: 700, backgroundColor: statusBg, color: statusColor, padding: '0.18rem 0.55rem', borderRadius: '1rem', border: `1px solid ${statusColor}22` }}>
@@ -920,7 +923,7 @@ const MyActiveChits = () => {
                     : 'Submit Payment Proof'}
                 </h3>
                 <p style={{ fontSize: '0.72rem', color: '#6b7280', margin: 0 }}>
-                  {modalChit?.name} · Month {modalMonth}
+                  {modalChit?.name} · {formatChitMonthWithNum(modalChit, modalMonth)}
                 </p>
               </div>
             </div>

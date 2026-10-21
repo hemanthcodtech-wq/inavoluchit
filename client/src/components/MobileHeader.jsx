@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Menu, 
@@ -20,7 +20,6 @@ import {
   Coins
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
-import leafIcon from '../assets/leaf-icon.png';
 
 const MobileHeader = () => {
   const { user, logout } = useAuth();
@@ -43,30 +42,22 @@ const MobileHeader = () => {
   };
 
   const adminLinks = [
-    { to: '/', label: 'Overview', icon: <LayoutDashboard size={20} /> },
+    { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={20} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={20} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={20} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={20} /> },
     { to: '/admin/auctions', label: 'Auctions', icon: <Gavel size={20} /> },
-    { to: '/admin/chit-approvals', label: 'Chit Approvals', icon: <Briefcase size={20} /> },
-    { to: '/admin/payments', label: 'Verify Payments', icon: <CheckSquare size={20} /> },
-    { to: '/admin/payment-history', label: 'Payment History', icon: <History size={20} /> },
-    { to: '/admin/records', label: 'System Records', icon: <FolderOpen size={20} /> },
-    { to: '/admin/audit-log', label: 'Audit Log', icon: <FileText size={20} /> },
     { to: '/profile', label: 'My Profile', icon: <User size={20} /> }
   ];
 
   const staffLinks = [
-    { to: '/', label: 'Overview', icon: <LayoutDashboard size={20} /> },
+    { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={20} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={20} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={20} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={20} /> },
     { to: '/admin/auctions', label: 'Auctions', icon: <Gavel size={20} /> },
-    { to: '/admin/payments', label: 'Verify Payments', icon: <CheckSquare size={20} /> },
-    { to: '/admin/payment-history', label: 'Payment History', icon: <History size={20} /> },
-    { to: '/admin/records', label: 'System Records', icon: <FolderOpen size={20} /> },
     { to: '/profile', label: 'My Profile', icon: <User size={20} /> }
   ];
 
@@ -96,45 +87,44 @@ const MobileHeader = () => {
         boxSizing: 'border-box'
       }}>
         {/* Brand Logo & Role */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flexShrink: 0 }}>
+        <Link 
+          to="/admin/dashboard" 
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '0.45rem', 
+            minWidth: 0, 
+            textDecoration: 'none' 
+          }}
+        >
           <img 
-            src={leafIcon} 
-            alt="InaVolu" 
-            onError={(e) => { e.currentTarget.src = '/leaf-icon.png'; }}
+            src={logoImg} 
+            alt="InaVolu Chit Funds" 
+            onError={(e) => { e.currentTarget.src = '/logo.png'; }}
             style={{ 
-              width: '38px', 
-              height: '38px', 
-              borderRadius: '8px', 
+              height: '34px', 
+              width: 'auto',
+              maxWidth: '145px', 
               objectFit: 'contain', 
               display: 'block', 
-              flexShrink: 0,
-              boxShadow: '0 2px 6px rgba(37, 99, 235, 0.2)'
+              flexShrink: 0
             }}
           />
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap' }}>
-              <span style={{ fontWeight: 800, fontSize: '1rem', color: '#0a1e3b', letterSpacing: '-0.02em' }}>
-                InaVolu
-              </span>
-              <span style={{
-                fontSize: '0.62rem',
-                fontWeight: 800,
-                backgroundColor: '#eef2ff',
-                color: '#1e3a8a',
-                padding: '0.12rem 0.45rem',
-                borderRadius: '9999px',
-                textTransform: 'uppercase',
-                border: '1px solid #c7d2fe',
-                letterSpacing: '0.04em'
-              }}>
-                {user.role === 'superadmin' ? 'Admin' : 'Staff'}
-              </span>
-            </div>
-            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#64748b', whiteSpace: 'nowrap' }}>
-              Chits Private Limited
-            </span>
-          </div>
-        </div>
+          <span style={{
+            fontSize: '0.62rem',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            padding: '0.15rem 0.45rem',
+            borderRadius: '4px',
+            background: user.role === 'superadmin' ? 'rgba(37, 99, 235, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+            color: user.role === 'superadmin' ? '#2563eb' : '#059669',
+            letterSpacing: '0.04em',
+            whiteSpace: 'nowrap',
+            border: user.role === 'superadmin' ? '1px solid rgba(37, 99, 235, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)'
+          }}>
+            {user.role === 'superadmin' ? 'Admin' : 'Staff'}
+          </span>
+        </Link>
 
         {/* Right Actions: Sign Out & Hamburger */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
@@ -219,13 +209,44 @@ const MobileHeader = () => {
       >
         {/* Drawer Header */}
         <div style={{
-          padding: '1.1rem 1.25rem',
+          padding: '1rem 1.15rem',
           borderBottom: '1px solid #f1f5f9',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
+          gap: '0.85rem',
           backgroundColor: '#f8fafc'
         }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <img 
+              src={logoImg} 
+              alt="InaVolu Chit Funds" 
+              onError={(e) => { e.currentTarget.src = '/logo.png'; }}
+              style={{ 
+                height: '32px', 
+                width: 'auto', 
+                maxWidth: '165px', 
+                objectFit: 'contain', 
+                display: 'block' 
+              }} 
+            />
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Close menu"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748b',
+                cursor: 'pointer',
+                padding: '0.35rem',
+                display: 'flex',
+                alignItems: 'center',
+                borderRadius: '6px'
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <div style={{
               width: '36px',
@@ -237,34 +258,20 @@ const MobileHeader = () => {
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
-              fontSize: '0.9rem'
+              fontSize: '0.9rem',
+              flexShrink: 0
             }}>
               {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
             </div>
-            <div>
-              <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.name || 'System Admin'}
               </p>
-              <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b' }}>
+              <p style={{ margin: 0, fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.email}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#64748b',
-              cursor: 'pointer',
-              padding: '0.25rem',
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <X size={20} />
-          </button>
         </div>
 
         {/* Navigation Links Scroll Area */}
@@ -291,6 +298,7 @@ const MobileHeader = () => {
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.to === '/' || item.to === '/admin/dashboard'}
               onClick={() => setIsOpen(false)}
               className={({ isActive }) => `mobile-drawer-link ${isActive ? 'active' : ''}`}
               style={({ isActive }) => ({

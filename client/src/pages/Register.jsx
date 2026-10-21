@@ -1,4 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+/**
+ * NOTE: Customer/User Registration page is currently commented out from active routing in App.jsx.
+ * Only Administrator & Staff login portal (/admin/login) is actively enabled.
+ */
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {

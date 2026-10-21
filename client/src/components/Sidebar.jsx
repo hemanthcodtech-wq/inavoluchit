@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -41,31 +41,21 @@ const Sidebar = () => {
 
 
   const adminLinks = [
-    { to: '/', label: 'Overview', icon: <LayoutDashboard size={21} /> },
+    { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={21} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={21} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={21} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={21} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={21} /> },
     { to: '/admin/auctions', label: 'Auction', icon: <Gavel size={21} /> },
-    { to: '/admin/chit-approvals', label: 'Chit Approvals', icon: <Briefcase size={21} /> },
-    { to: '/admin/payments', label: 'Verify Payments', icon: <CheckSquare size={21} /> },
-    { to: '/admin/payment-history', label: 'Payment History', icon: <History size={21} /> },
-    { to: '/admin/records', label: 'System Records', icon: <FolderOpen size={21} /> },
-    { to: '/admin/audit-log', label: 'Audit Log', icon: <FileText size={21} /> },
   ];
 
   const staffLinks = [
-    { to: '/', label: 'Overview', icon: <LayoutDashboard size={21} /> },
+    { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={21} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={21} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={21} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={21} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={21} /> },
     { to: '/admin/auctions', label: 'Auction', icon: <Gavel size={21} /> },
-    { to: '/admin/chit-approvals', label: 'Chit Approvals', icon: <Briefcase size={21} /> },
-    { to: '/admin/payments', label: 'Verify Payments', icon: <CheckSquare size={21} /> },
-    { to: '/admin/payment-history', label: 'Payment History', icon: <History size={21} /> },
-    { to: '/admin/records', label: 'System Records', icon: <FolderOpen size={21} /> },
-    { to: '/admin/audit-log', label: 'Audit Log', icon: <FileText size={21} /> },
   ];
 
 
@@ -151,7 +141,7 @@ const Sidebar = () => {
             <NavLink
               key={link.to}
               to={link.to}
-              end={link.to === '/'}
+              end={link.to === '/' || link.to === '/admin/dashboard'}
               className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
               style={{
                 display: 'flex',

@@ -12,6 +12,13 @@ const chitSchema = new mongoose.Schema({
   startDate: Date,
   endDate: Date,
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  monthlyDues: [{
+    monthNumber: { type: Number, required: true },
+    dueAmount: { type: Number, required: true },
+    dueDate: Date,
+    notes: String,
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Chit', chitSchema);

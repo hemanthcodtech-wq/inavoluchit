@@ -1,4 +1,4 @@
-﻿import React, { Component } from 'react';
+import React, { Component } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -35,10 +35,10 @@ import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import MobileHeader from './components/MobileHeader';
 
-// Public Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
+// Public Pages (Customer Login & Register pages commented out)
+// import Login from './pages/Login';
+// import Register from './pages/Register';
+// import ForgotPassword from './pages/ForgotPassword';
 import StaffLogin from './pages/StaffLogin';
 
 import Home from './pages/Home';
@@ -76,7 +76,7 @@ import ChitPlansManager from './pages/admin/ChitPlansManager';
 const MainLayout = () => {
   const { user, token, API_URL } = useAuth();
   const location = useLocation();
-  const isAuthPage = ['/login', '/register', '/staff-login', '/admin/login', '/admin'].includes(location.pathname);
+  const isAuthPage = ['/staff-login', '/admin/login', '/admin'].includes(location.pathname);
   const isAdminOrStaff = user && (user.role === 'superadmin' || user.role === 'employee');
   const showNavbar = !isAuthPage && !isAdminOrStaff;
   
@@ -84,6 +84,8 @@ const MainLayout = () => {
     if (user && token && (user.role === 'superadmin' || user.role === 'employee')) {
       const tabNameMap = {
         '/': 'Overview',
+        '/admin/dashboard': 'Overview',
+        '/admin/overview': 'Overview',
         '/admin/all-users': 'All Users',
         '/admin/documents': 'Chit Documents',
         '/admin/chit-plans': 'Chit Plans',
@@ -101,6 +103,8 @@ const MainLayout = () => {
 
       const moduleMap = {
         '/': 'system',
+        '/admin/dashboard': 'system',
+        '/admin/overview': 'system',
         '/admin/all-users': 'members',
         '/admin/documents': 'members',
         '/admin/chit-plans': 'chit_groups',
@@ -272,7 +276,7 @@ const ProtectedRoute = () => {
   }
   
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
   
   return <Outlet />;
@@ -329,10 +333,9 @@ const AdminEntry = () => {
     );
   }
 
-  // Only redirect /admin to /admin/chits if already logged in as admin/staff
-  // When explicitly visiting /admin/login or /staff-login, always show the login screen
-  if (location.pathname === '/admin' && user && (user.role === 'superadmin' || user.role === 'employee')) {
-    return <Navigate to="/admin/chits" replace />;
+  // If already logged in as admin/staff, redirect directly to /admin/dashboard
+  if (user && (user.role === 'superadmin' || user.role === 'employee')) {
+    return <Navigate to="/admin/dashboard" replace />;
   }
   
   return <AdminLogin />;
@@ -350,7 +353,12 @@ const HomeOrDashboard = () => {
     );
   }
 
-  // If logged in (admin, staff, or member), render Dashboard (contains Admin Overview for staff/admin)
+  // If logged in as admin or staff, route directly to /admin/dashboard
+  if (user && (user.role === 'superadmin' || user.role === 'employee')) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // If logged in (member), render Dashboard
   if (user) {
     return <Dashboard />;
   }
@@ -370,7 +378,8 @@ function App() {
           <Route path="/admin/login" element={<AdminEntry />} />
           <Route path="/staff-login" element={<AdminEntry />} />
 
-          {/* Customer / Member Auth Routes */}
+          {/* Customer / Member Auth Routes (Temporarily commented out) */}
+          {/*
           <Route element={<GuestRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/login" element={<Login />} />
@@ -378,6 +387,7 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
             </Route>
           </Route>
+          */}
 
           {/* Publicly Informative Routes (Available to anyone, logged in or out) */}
           <Route element={<MainLayout />}>
@@ -404,7 +414,8 @@ function App() {
 
               {/* Staff & Admin Shared Paths */}
               <Route element={<StaffRoute />}>
-                <Route path="/admin/overview" element={<Dashboard />} />
+                <Route path="/admin/dashboard" element={<Dashboard />} />
+                <Route path="/admin/overview" element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="/admin/chit-plans" element={<ChitPlansManager />} />
                 <Route path="/admin/chit-approvals" element={<ChitApprovals />} />
                 <Route path="/admin/chits" element={<ChitManager />} />

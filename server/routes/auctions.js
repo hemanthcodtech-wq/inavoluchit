@@ -26,8 +26,9 @@ router.get('/', async (req, res) => {
     const filter = chitId ? { chitId } : {};
 
     const rawAuctions = await Auction.find(filter)
-      .populate('chitId', 'name chitValue totalMembers durationMonths monthlyContribution')
-      .populate('winningMemberId', 'name email phone')
+      .populate('chitId', 'name chitValue totalMembers durationMonths monthlyContribution status currentMonth')
+      .populate('winningMemberId', 'name email phone memberId profileImgUrl')
+      .populate('participatingUserIds', 'name email phone memberId profileImgUrl')
       .sort({ createdAt: -1 })
       .lean();
 
@@ -35,6 +36,14 @@ router.get('/', async (req, res) => {
       const item = { ...a, id: a._id ? a._id.toString() : a.id };
       if (a.chitId) item.chit = a.chitId;
       if (a.winningMemberId) item.winningMember = a.winningMemberId;
+      if (a.participatingUserIds) {
+        item.participatingUsers = a.participatingUserIds.map(u => ({
+          ...u,
+          id: u._id ? u._id.toString() : u.id
+        }));
+      } else {
+        item.participatingUsers = [];
+      }
       return item;
     });
 
@@ -46,7 +55,7 @@ router.get('/', async (req, res) => {
 });
 
 // @route   POST /api/auctions
-// @desc    Record monthly auction result
+// @desc    Record monthly auction: chit, month, participating users, winning user, auctioned amount, and payment proof
 // @access  Private / Staff / Admin
 router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
   try {
@@ -54,27 +63,30 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       chitId,
       monthNumber,
       auctionDate,
-      winningBidDiscount,
+      auctionAmount,
+      winnerPayout,
       winningMemberId,
       winningChitMemberId,
       winningTicket,
+      participatingUserIds,
       auctionNotes,
       payoutMethod = 'Bank Transfer (NEFT / RTGS / IMPS)',
       beneficiaryBankName,
       bankUtr
     } = req.body;
 
-    if (!chitId || !monthNumber || !winningBidDiscount || (!winningMemberId && !winningChitMemberId)) {
+    const parsedAuctionAmount = Number(auctionAmount !== undefined ? auctionAmount : winnerPayout);
+
+    if (!chitId || !monthNumber || isNaN(parsedAuctionAmount) || (!winningMemberId && !winningChitMemberId)) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide chitId, monthNumber, winningBidDiscount, and winningMemberId/winningChitMemberId'
+        message: 'Please provide chitId, monthNumber, winning member, and auctioned amount.'
       });
     }
 
     const chit = await Chit.findById(chitId).lean();
-
     if (!chit) {
-      return res.status(404).json({ success: false, message: 'Chit scheme not found' });
+      return res.status(404).json({ success: false, message: 'Chit scheme not found.' });
     }
     chit.members = await ChitMember.find({ chitId }).lean();
 
@@ -91,74 +103,62 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       });
     }
 
-    // Verify winning ticket/member is part of this chit
+    // Verify winning member is part of this chit
     let memberEntry = null;
     if (winningChitMemberId) {
-      memberEntry = chit.members.find(m => m.id === winningChitMemberId && m.status === 'approved');
+      memberEntry = chit.members.find(m => (m._id?.toString() === winningChitMemberId || m.id === winningChitMemberId) && m.status === 'approved');
     } else if (winningTicket) {
       memberEntry = chit.members.find(m => (m.ticketId === winningTicket || m.id === winningTicket) && m.status === 'approved');
     }
     if (!memberEntry && winningMemberId) {
-      memberEntry = chit.members.find(m => m.userId === winningMemberId && m.status === 'approved');
+      memberEntry = chit.members.find(m => (m.userId?.toString() === winningMemberId || m.userId === winningMemberId) && m.status === 'approved');
     }
 
     if (!memberEntry && req.user.role !== 'superadmin') {
       return res.status(400).json({
         success: false,
-        message: 'Selected winner is not an approved member of this chit group'
+        message: 'Selected winner is not an approved member of this chit group.'
       });
     }
 
-    const finalUserId = memberEntry ? memberEntry.userId : winningMemberId;
+    const finalUserId = memberEntry ? (memberEntry.userId?.toString() || memberEntry.userId) : winningMemberId;
     const rawTicket = winningTicket || memberEntry?.ticketId || `MEMBER-${memberEntry?.slotNumber || 1}`;
     const finalTicket = rawTicket ? rawTicket.replace(/^TICKET-/, 'MEMBER-') : rawTicket;
 
-    // Check if this specific member slot has already won an auction in this chit
-    const ticketAlreadyWon = await Auction.findOne({
+    // Check if this specific ticket slot already won
+    if (memberEntry) {
+      const ticketAlreadyWon = await Auction.findOne({
         chitId,
-        OR: [
-          ...(memberEntry ? [{ winningChitMemberId: memberEntry.id }] : []),
-          ...(finalTicket ? [{ winningTicket: finalTicket }] : [])
+        $or: [
+          { winningChitMemberId: memberEntry._id || memberEntry.id },
+          { winningTicket: finalTicket }
         ]
       });
-
-    if (ticketAlreadyWon) {
-      return res.status(400).json({
-        success: false,
-        message: `Member "${finalTicket}" has already won an auction in Month ${ticketAlreadyWon.monthNumber}. Other member slots for this user remain eligible.`
-      });
+      if (ticketAlreadyWon) {
+        return res.status(400).json({
+          success: false,
+          message: `Ticket "${finalTicket}" has already won an auction in Month ${ticketAlreadyWon.monthNumber}.`
+        });
+      }
     }
 
-    // Server Financial Calculation (Safe math engine)
-    const chitValue = Number(chit.chitValue);
-    const duration = Number(chit.durationMonths);
-    const discount = Number(winningBidDiscount);
-    const nominalMonthly = Number(chit.monthlyContribution) || Math.round(chitValue / duration);
-    
-    const isFixedScheme = chit.termsAndConditions && chit.termsAndConditions.toLowerCase().includes('fixed');
-
-    let foremanCommission = 0;
-    let winnerPayout = chitValue - discount;
-    let distributablePool = 0;
-    let dividendPerMember = 0;
-    let nextPayableAmount = nominalMonthly;
-
-    const isLastMonth = Number(monthNumber) >= duration;
-
-    if (!isFixedScheme) {
-      let commissionPercent = 5;
-      if (chit.termsAndConditions && chit.termsAndConditions.includes('Foreman Commission:')) {
-        const match = chit.termsAndConditions.match(/Foreman Commission:\s*(\d+)%/i);
-        if (match && match[1]) {
-          commissionPercent = Number(match[1]);
+    // Parse participating users
+    let parsedParticipants = [];
+    if (participatingUserIds) {
+      if (Array.isArray(participatingUserIds)) {
+        parsedParticipants = participatingUserIds;
+      } else if (typeof participatingUserIds === 'string') {
+        try {
+          parsedParticipants = JSON.parse(participatingUserIds);
+        } catch {
+          parsedParticipants = participatingUserIds.split(',').map(s => s.trim()).filter(Boolean);
         }
       }
-      foremanCommission = Math.round(chitValue * (commissionPercent / 100));
-      distributablePool = Math.max(0, discount - foremanCommission);
-      dividendPerMember = Math.round(distributablePool / chit.totalMembers);
-      nextPayableAmount = isLastMonth ? 0 : Math.max(0, nominalMonthly - dividendPerMember);
-    } else {
-      nextPayableAmount = isLastMonth ? 0 : nominalMonthly;
+    }
+
+    // Ensure winner is among participants
+    if (finalUserId && !parsedParticipants.includes(finalUserId)) {
+      parsedParticipants.push(finalUserId);
     }
 
     const receiptUrl = req.file ? getFileUrl(req.file) : null;
@@ -168,12 +168,14 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       chitId,
       monthNumber: Number(monthNumber),
       auctionDate: auctionDate ? new Date(auctionDate) : new Date(),
-      winningBidDiscount: discount,
-      foremanCommission,
-      winnerPayout,
-      distributablePool,
-      dividendPerMember,
-      nextPayableAmount,
+      auctionAmount: parsedAuctionAmount,
+      winnerPayout: parsedAuctionAmount,
+      winningBidDiscount: Math.max(0, (chit.chitValue || 0) - parsedAuctionAmount),
+      foremanCommission: 0,
+      distributablePool: 0,
+      dividendPerMember: 0,
+      nextPayableAmount: chit.monthlyContribution || 0,
+      participatingUserIds: parsedParticipants,
       winningMemberId: finalUserId,
       winningChitMemberId: memberEntry ? (memberEntry.id || memberEntry._id) : null,
       winningTicket: finalTicket,
@@ -182,10 +184,13 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       beneficiaryBankName: beneficiaryBankName || null,
       bankUtr: bankUtr || null,
       receiptUrl,
-      receiptPublicId
+      receiptPublicId,
+      recordedBy: req.user._id || req.user.id
     });
 
     // Advance chit's current month or mark completed if it's the final month
+    const duration = Number(chit.durationMonths);
+    const isLastMonth = Number(monthNumber) >= duration;
     if (isLastMonth) {
       await Chit.findByIdAndUpdate(chitId, { currentMonth: duration, status: 'completed' });
     } else if (Number(monthNumber) >= chit.currentMonth && chit.currentMonth < duration) {
@@ -199,7 +204,7 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       recordId: auction.id,
       result: 'Success',
       severity: 'Info',
-      details: `Winner: ${finalTicket || finalUserId}, Month ${monthNumber}, Payout ₹${winnerPayout}`
+      details: `Winner: ${finalTicket || finalUserId}, Month ${monthNumber}, Auctioned Amount ₹${parsedAuctionAmount}`
     });
 
     res.status(201).json({
@@ -209,7 +214,7 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating auction:', error);
-    res.status(500).json({ success: false, message: 'Server error recording auction' });
+    res.status(500).json({ success: false, message: 'Server error recording auction: ' + error.message });
   }
 });
 

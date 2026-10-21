@@ -27,6 +27,8 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import ProofUploader from '../../components/ProofUploader';
+import { formatChitMonthYear, formatChitMonthFull } from '../../utils/chitDateUtils';
 
 const UserDetailedRecords = () => {
   const { userId } = useParams();
@@ -303,12 +305,12 @@ const UserDetailedRecords = () => {
       const isAuctionCompleted = m === 1 ? true : (auctionedMonthsSet.has(m - 1) || (m - 1) <= maxAuctionMonth);
       const isUnlocked = isAuctionCompleted || isPaid || isPending || chit.status === 'completed';
 
-      // Month 1 is nominal.
-      // Month M > 1 checks Month M - 1 auction for nextPayableAmount / dividend.
-      let expectedAmount = nominal;
+      // Check if admin explicitly configured monthly due for this month
+      const customDueEntry = (chit.monthlyDues || []).find(d => Number(d.monthNumber) === m);
+      let expectedAmount = customDueEntry ? Number(customDueEntry.dueAmount) : nominal;
       let dividend = 0;
 
-      if (m > 1) {
+      if (!customDueEntry && m > 1) {
         const prevAuction = chitAuctionList.find(a => Number(a.monthNumber) === m - 1);
         if (prevAuction) {
           if (prevAuction.nextPayableAmount !== undefined && prevAuction.nextPayableAmount !== null) {
@@ -321,7 +323,7 @@ const UserDetailedRecords = () => {
           expectedAmount = Number(paymentRecord.amount);
           dividend = Math.max(0, nominal - expectedAmount);
         }
-      } else {
+      } else if (!customDueEntry) {
         if (paymentRecord && isPaid && Number(paymentRecord.amount) > 0) {
           expectedAmount = Number(paymentRecord.amount);
         }
@@ -406,7 +408,7 @@ const UserDetailedRecords = () => {
       doc.text(`Status: ${chit.status.toUpperCase()} | Paid: ${chit.paidMonthsCount}/${chit.durationMonths} Months | Due: ${chit.monthsDue} Months | Paid Amt: Rs.${chit.amountPaid.toLocaleString()} | Due Amt: Rs.${chit.amountDue.toLocaleString()}`, 14, startY + 5);
 
       const tableRows = chit.monthLedger.map(item => [
-        `Month ${item.monthNumber}`,
+        `${formatChitMonthYear(chit, item.monthNumber)} (M${item.monthNumber})`,
         `Rs.${item.expectedAmount.toLocaleString()}`,
         item.isPaid ? 'PAID' : (item.isPending ? 'PENDING' : 'DUE'),
         item.payment?.transactionId || (item.isPaid ? 'Cash/Verified' : '—'),
@@ -415,7 +417,7 @@ const UserDetailedRecords = () => {
 
       autoTable(doc, {
         startY: startY + 8,
-        head: [['Month', 'Amount', 'Payment Status', 'Transaction ID / Mode', 'Paid Date']],
+        head: [['Month & Year', 'Amount', 'Payment Status', 'Transaction ID / Mode', 'Paid Date']],
         body: tableRows,
         styles: { fontSize: 8, cellPadding: 2.5 },
         headStyles: { fillColor: [22, 101, 52], textColor: 255 },
@@ -445,7 +447,7 @@ const UserDetailedRecords = () => {
 
     enrichedChits.forEach(chit => {
       const rows = chit.monthLedger.map(item => ({
-        'Month': `Month ${item.monthNumber}`,
+        'Month & Year': `${formatChitMonthYear(chit, item.monthNumber)} (Month ${item.monthNumber})`,
         'Installment (Rs)': item.expectedAmount,
         'Status': item.isPaid ? 'PAID' : (item.isPending ? 'PENDING' : 'DUE'),
         'Transaction ID': item.payment?.transactionId || '',
@@ -1133,7 +1135,12 @@ const UserDetailedRecords = () => {
                                 >
                                   {/* Month */}
                                   <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: isRowLocked ? '#6b7280' : '#111827' }}>
-                                    Month {row.monthNumber}
+                                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: isRowLocked ? '#6b7280' : '#111827' }}>
+                                      {formatChitMonthYear(activeChit, row.monthNumber)}
+                                    </div>
+                                    <div style={{ fontSize: '0.74rem', color: '#6b7280', fontWeight: 600 }}>
+                                      Month {row.monthNumber}
+                                    </div>
                                     {isRowLocked && (
                                       <span style={{ fontSize: '0.7rem', color: '#9ca3af', display: 'block', fontWeight: 500 }}>
                                         (Auction Pending)
@@ -1404,6 +1411,8 @@ const UserDetailedRecords = () => {
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '0.35rem' }}>Amount (₹)</span>
                 <input
                   type="number"
+                  min="0"
+                  step="any"
                   value={uploadModal.amount ?? ''}
                   onChange={(e) => setUploadModal({ ...uploadModal, amount: e.target.value })}
                   style={{ width: '100%', padding: '0.6rem 0.85rem', borderRadius: '8px', border: '1px solid #d1d5db', backgroundColor: '#fff', fontWeight: 700 }}
@@ -1425,14 +1434,12 @@ const UserDetailedRecords = () => {
               </div>
 
               <div>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '0.35rem' }}>Receipt Image / Proof (Optional)</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setUploadData({ ...uploadData, file: e.target.files[0] })}
-                  style={{ width: '100%', fontSize: '0.8rem', padding: '0.4rem', border: '1px solid #d1d5db', borderRadius: '8px' }}
+                <ProofUploader
+                  label="Receipt Image / Proof"
+                  description="Upload file or snap live camera photo"
+                  required={false}
+                  onFileSelected={(file) => setUploadData({ ...uploadData, file })}
                 />
-                <span style={{ fontSize: '0.7rem', color: '#9ca3af', display: 'block', marginTop: '0.2rem' }}>Leave blank if cash payment without physical receipt.</span>
               </div>
 
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>

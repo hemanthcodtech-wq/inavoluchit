@@ -795,7 +795,8 @@ const ChitPlansManager = () => {
                   <input
                     type="number"
                     required
-                    min="1000"
+                    min="0"
+                    step="any"
                     placeholder="e.g. 250000"
                     value={chitValue}
                     onChange={(e) => handleValueChange(e.target.value)}
@@ -811,7 +812,7 @@ const ChitPlansManager = () => {
                   <input
                     type="number"
                     required
-                    min="2"
+                    min="1"
                     placeholder="e.g. 25"
                     value={totalMembers}
                     onChange={(e) => handleMembersChange(e.target.value)}
@@ -830,7 +831,7 @@ const ChitPlansManager = () => {
                   <input
                     type="number"
                     required
-                    min="2"
+                    min="1"
                     placeholder="e.g. 25"
                     value={durationMonths}
                     onChange={(e) => setDurationMonths(e.target.value)}
@@ -845,6 +846,8 @@ const ChitPlansManager = () => {
                   </label>
                   <input
                     type="number"
+                    min="0"
+                    step="any"
                     placeholder="e.g. 10000"
                     value={monthlyContribution}
                     onChange={(e) => setMonthlyContribution(e.target.value)}

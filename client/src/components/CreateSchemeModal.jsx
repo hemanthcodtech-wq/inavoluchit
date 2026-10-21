@@ -256,6 +256,8 @@ const CreateSchemeModal = ({ isOpen, onClose, onSchemeCreated }) => {
               <input
                 type="number"
                 required
+                min="0"
+                step="any"
                 value={chitValue}
                 onChange={(e) => handleChitValueChange(e.target.value)}
                 placeholder="100000"
@@ -420,6 +422,8 @@ const CreateSchemeModal = ({ isOpen, onClose, onSchemeCreated }) => {
               <input
                 type="number"
                 required
+                min="0"
+                step="any"
                 value={monthlyContribution}
                 onChange={(e) => setMonthlyContribution(e.target.value)}
                 placeholder="e.g. 8200"

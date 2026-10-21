@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
@@ -40,6 +40,13 @@ const AllUsers = () => {
   const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'verified', 'pending'
   const [deleteLoadingId, setDeleteLoadingId] = useState(null);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+
+  const getFullImgUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const base = import.meta.env.VITE_SERVER_URL || 'http://localhost:5000';
+    return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
 
   // Edit User Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -273,23 +280,23 @@ const AllUsers = () => {
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.45rem',
-                fontSize: '0.88rem',
-                padding: '0.55rem 1.25rem',
-                borderRadius: '8px',
+                gap: '0.5rem',
+                fontSize: '0.92rem',
+                padding: '0.65rem 1.4rem',
+                borderRadius: '10px',
                 border: 'none',
                 backgroundColor: '#1d4ed8',
                 color: '#ffffff',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(29, 78, 216, 0.25)',
+                boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2563eb'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1d4ed8'; }}
             >
-              <UserPlus size={16} />
-              <span>Register User</span>
+              <UserPlus size={18} />
+              <span>+ Add New Member</span>
             </button>
 
             <button
@@ -553,7 +560,7 @@ const AllUsers = () => {
               <ScrollAnimationWrapper key={user.id}>
                 <div
                   onClick={() => navigate(`/admin/records/user/${user.id}`)}
-                  className="card-premium glass-panel"
+                  className="card-premium glass-panel admin-user-item-card"
                   style={{
                     backgroundColor: '#ffffff',
                     border: '1px solid rgba(10, 30, 59, 0.12)',
@@ -579,27 +586,44 @@ const AllUsers = () => {
                   }}
                 >
                   {/* Left: Avatar + Details */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      width: '46px',
-                      height: '46px',
-                      borderRadius: '50%',
-                      backgroundColor: user.isApproved ? '#dbeafe' : '#fef3c7',
-                      color: user.isApproved ? '#2563eb' : '#b45309',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1.1rem',
-                      fontWeight: 800,
-                      border: `2px solid ${user.isApproved ? '#a5b4fc' : '#fde68a'}`,
-                      flexShrink: 0
-                    }}>
-                      {(user.name || 'U').substring(0, 2).toUpperCase()}
-                    </div>
+                  <div className="admin-user-info-col" style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
+                    {user.profileImgUrl ? (
+                      <img
+                        src={getFullImgUrl(user.profileImgUrl)}
+                        alt={user.name}
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        style={{
+                          width: '46px',
+                          height: '46px',
+                          borderRadius: '50%',
+                          objectFit: 'cover',
+                          border: `2px solid ${user.isApproved ? '#2563eb' : '#f59e0b'}`,
+                          flexShrink: 0,
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+                        }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: '46px',
+                        height: '46px',
+                        borderRadius: '50%',
+                        backgroundColor: user.isApproved ? '#dbeafe' : '#fef3c7',
+                        color: user.isApproved ? '#2563eb' : '#b45309',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '1.1rem',
+                        fontWeight: 800,
+                        border: `2px solid ${user.isApproved ? '#a5b4fc' : '#fde68a'}`,
+                        flexShrink: 0
+                      }}>
+                        {(user.name || 'U').substring(0, 2).toUpperCase()}
+                      </div>
+                    )}
 
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: 0, wordBreak: 'break-word' }}>
                           {user.name}
                         </h3>
                         {user.isApproved ? (
@@ -675,7 +699,7 @@ const AllUsers = () => {
                         marginTop: '0.35rem',
                         flexWrap: 'wrap'
                       }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', whiteSpace: 'nowrap' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', wordBreak: 'break-all' }}>
                           <Mail size={13} color="#9ca3af" />
                           {user.email}
                         </span>
@@ -692,8 +716,8 @@ const AllUsers = () => {
                   </div>
 
                   {/* Right: Enrolled Chits Badge & View / Edit / Delete Buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                    <span style={{
+                  <div className="admin-user-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0, flexWrap: 'wrap' }}>
+                    <span className="admin-user-enrolled-badge" style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -712,6 +736,7 @@ const AllUsers = () => {
 
                     <button
                       type="button"
+                      className="admin-user-btn admin-user-btn-edit"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditUser(user);
@@ -743,6 +768,7 @@ const AllUsers = () => {
 
                     <button
                       type="button"
+                      className="admin-user-btn admin-user-btn-view"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/admin/records/user/${user.id}`);
@@ -776,6 +802,7 @@ const AllUsers = () => {
                     {user.role !== 'superadmin' && (
                       <button
                         type="button"
+                        className="admin-user-btn admin-user-btn-delete"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteUser(user);

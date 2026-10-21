@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ScrollAnimationWrapper from '../../components/ScrollAnimationWrapper';
@@ -30,9 +30,13 @@ import {
   ShieldCheck,
   Play,
   RefreshCw,
-  LogOut
+  LogOut,
+  Sliders,
+  CreditCard
 } from 'lucide-react';
-import CreateSchemeModal from '../../components/CreateSchemeModal';
+import SetMonthlyDueModal from '../../components/SetMonthlyDueModal';
+import RecordChitPaymentModal from '../../components/RecordChitPaymentModal';
+import ChitDuesLedgerModal from '../../components/ChitDuesLedgerModal';
 
 const ChitManager = () => {
   const { token, API_URL, logout } = useAuth();
@@ -43,11 +47,13 @@ const ChitManager = () => {
     navigate('/admin/login');
   };
   const [chits, setChits] = useState([]);
+  const [selectedChitForDues, setSelectedChitForDues] = useState(null);
+  const [selectedChitForSetDue, setSelectedChitForSetDue] = useState(null);
+  const [selectedChitForRecordPayment, setSelectedChitForRecordPayment] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [formSuccess, setFormSuccess] = useState('');
   const [formError, setFormError] = useState('');
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // View Members Modal State
   const [viewingMembersChit, setViewingMembersChit] = useState(null);
@@ -654,48 +660,6 @@ const ChitManager = () => {
                 <LogOut size={16} />
                 <span>Sign Out</span>
               </button>
-
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(true)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  backgroundColor: '#1d4ed8',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  padding: '0.6rem 1.3rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#1e40af'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
-              >
-                <Plus size={18} />
-                <span>Create Scheme</span>
-              </button>
-              <a 
-                href="/admin/chit-approvals" 
-                className="btn-secondary" 
-                style={{ 
-                  fontSize: '0.85rem', 
-                  padding: '0.55rem 1.1rem', 
-                  textDecoration: 'none', 
-                  fontWeight: 600,
-                  borderRadius: '9999px',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-              >
-                <span>Manage Approvals</span>
-                <span>&rarr;</span>
-              </a>
             </div>
           </div>
 
@@ -791,31 +755,10 @@ const ChitManager = () => {
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem auto' }}>
                 <List size={32} color="#2563eb" />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.5rem' }}>No Chit Groups Created Yet</h3>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto 1.5rem auto' }}>
-                Get started by clicking "+ Create Scheme" to configure and launch your first chit scheme.
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1f2937', marginBottom: '0.5rem' }}>No Chit Groups Found</h3>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto' }}>
+                No chit schemes found matching the selected filter.
               </p>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(true)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  backgroundColor: '#1d4ed8',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  padding: '0.65rem 1.4rem',
-                  fontSize: '0.92rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(29, 78, 216, 0.3)'
-                }}
-              >
-                <Plus size={18} />
-                <span>Create Scheme</span>
-              </button>
             </div>
           ) : (
             <div className="admin-chit-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.25rem' }}>
@@ -940,6 +883,57 @@ const ChitManager = () => {
 
                     {/* Action buttons */}
                     <div className="chit-card-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', borderTop: '1px solid #f3f4f6', paddingTop: '0.85rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedChitForDues(chit)}
+                        title="Manage Monthly Dues & User Payments"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.45rem 0.85rem',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(22, 163, 74, 0.35)',
+                          backgroundColor: '#f0fdf4',
+                          color: '#15803d',
+                          cursor: 'pointer',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 3px rgba(22, 163, 74, 0.1)'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#dcfce7'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f0fdf4'; }}
+                      >
+                        <CreditCard size={14} />
+                        <span>Payments & Dues</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedChitForSetDue(chit)}
+                        title="Set Monthly Installment Payable by Members"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          padding: '0.45rem 0.85rem',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
+                          backgroundColor: '#fffbeb',
+                          color: '#b45309',
+                          cursor: 'pointer',
+                          fontSize: '0.82rem',
+                          fontWeight: 700,
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fef3c7'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#fffbeb'; }}
+                      >
+                        <Sliders size={14} />
+                        <span>Set Due</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => openAddMemberModal(chit)}
@@ -1225,6 +1219,8 @@ const ChitManager = () => {
                     <input
                       type="number"
                       required
+                      min="0"
+                      step="any"
                       placeholder="e.g. 8200"
                       value={editMonthlyContribution}
                       onChange={(e) => setEditMonthlyContribution(e.target.value)}
@@ -1404,14 +1400,35 @@ const ChitManager = () => {
         </div>
       )}
 
-      {/* Reusable Exact Create Scheme Modal */}
-      <CreateSchemeModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSchemeCreated={() => {
-          fetchChits();
-        }}
-      />
+      {/* Chit Monthly Dues & Payments Ledger Modal */}
+      {selectedChitForDues && (
+        <ChitDuesLedgerModal
+          isOpen={Boolean(selectedChitForDues)}
+          onClose={() => setSelectedChitForDues(null)}
+          chitId={selectedChitForDues.id || selectedChitForDues._id}
+          onChitUpdated={() => fetchChits()}
+        />
+      )}
+
+      {/* Set Monthly Due Modal */}
+      {selectedChitForSetDue && (
+        <SetMonthlyDueModal
+          isOpen={Boolean(selectedChitForSetDue)}
+          onClose={() => setSelectedChitForSetDue(null)}
+          chit={selectedChitForSetDue}
+          onDueUpdated={() => fetchChits()}
+        />
+      )}
+
+      {/* Record Member Payment Modal */}
+      {selectedChitForRecordPayment && (
+        <RecordChitPaymentModal
+          isOpen={Boolean(selectedChitForRecordPayment)}
+          onClose={() => setSelectedChitForRecordPayment(null)}
+          chit={selectedChitForRecordPayment}
+          onPaymentRecorded={() => fetchChits()}
+        />
+      )}
 
       {/* View Members Details Modal */}
       {viewingMembersChit && (() => {

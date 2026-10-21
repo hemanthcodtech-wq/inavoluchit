@@ -55,9 +55,10 @@ router.get('/next-member-id', async (req, res) => {
   }
 });
 
-// @route   POST /api/auth/register
-// @desc    Register a new user with comprehensive details (auto-approved)
-// @access  Public
+// =========================================================================
+// @route   POST /api/auth/register (USER REGISTRATION - TEMPORARILY COMMENTED OUT)
+// =========================================================================
+/*
 router.post(
   '/register',
   upload.fields([
@@ -237,6 +238,13 @@ router.post(
     }
   }
 );
+*/
+router.post('/register', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'User registration is temporarily disabled.'
+  });
+});
 
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token
@@ -257,6 +265,14 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    // Customer/Member login is temporarily disabled - only Staff & Admins can log in
+    if (user.role === 'user') {
+      return res.status(403).json({
+        success: false,
+        message: 'Member portal login is temporarily disabled. Only Administrator & Staff access is currently active.'
+      });
     }
 
     // Check if password matches
@@ -490,9 +506,10 @@ router.put(
   }
 );
 
-// @route   POST /api/auth/request-otp
-// @desc    Request Email OTP for login
-// @access  Public
+// =========================================================================
+// @route   POST /api/auth/request-otp & /verify-otp (USER OTP LOGIN - COMMENTED OUT)
+// =========================================================================
+/*
 router.post('/request-otp', async (req, res) => {
   try {
     const { email } = req.body;
@@ -567,9 +584,6 @@ router.post('/request-otp', async (req, res) => {
   }
 });
 
-// @route   POST /api/auth/verify-otp
-// @desc    Verify Email OTP and login
-// @access  Public
 router.post('/verify-otp', async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -604,6 +618,20 @@ router.post('/verify-otp', async (req, res) => {
     console.error('Error in verify-otp:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
+});
+*/
+router.post('/request-otp', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Member OTP login is temporarily disabled.'
+  });
+});
+
+router.post('/verify-otp', (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: 'Member OTP login is temporarily disabled.'
+  });
 });
 
 // @route   POST /api/auth/forgot-password

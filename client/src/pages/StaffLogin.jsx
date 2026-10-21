@@ -23,7 +23,7 @@ const StaffLogin = () => {
     try {
       const user = await login(formData.email, formData.password);
       if (user.role === 'employee' || user.role === 'superadmin') {
-        navigate('/'); // They will be routed based on role in the layout
+        navigate('/admin/dashboard');
       } else {
         // Log them out if they aren't staff
         localStorage.removeItem('token');

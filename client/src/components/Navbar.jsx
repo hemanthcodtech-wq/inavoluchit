@@ -191,6 +191,7 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
+            /* User Sign In and Register commented out
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Link
                 to="/login"
@@ -207,6 +208,8 @@ const Navbar = () => {
                 Register
               </Link>
             </div>
+            */
+            null
           )}
         </div>
 
@@ -591,6 +594,7 @@ const Navbar = () => {
                     <span>Contact Us</span>
                   </NavLink>
 
+                  {/* User Sign In and Register commented out
                   <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <Link
                       to="/login"
@@ -609,6 +613,7 @@ const Navbar = () => {
                       Register New Account
                     </Link>
                   </div>
+                  */}
                 </div>
               )}
             </div>

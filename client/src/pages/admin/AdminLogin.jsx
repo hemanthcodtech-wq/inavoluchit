@@ -26,7 +26,7 @@ const AdminLogin = () => {
       const password = (formData.password || '').trim();
       const user = await login(email, password);
       if (user.role === 'superadmin' || user.role === 'employee') {
-        navigate('/admin/chits');
+        navigate('/admin/dashboard');
       } else {
         localStorage.removeItem('token');
         setError('Access Denied: This portal is restricted to authorized Administrators & Staff.');

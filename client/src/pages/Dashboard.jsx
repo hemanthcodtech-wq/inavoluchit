@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
@@ -21,11 +21,16 @@ import {
   Gavel,
   Star,
   RefreshCw,
-  LogOut,
   Coins,
   Award,
-  Sparkles
+  Sparkles,
+  LogOut
 } from 'lucide-react';
+import { 
+  getChitMonthDate, 
+  formatChitMonthFull, 
+  formatChitMonthWithNum 
+} from '../utils/chitDateUtils';
 
 const Dashboard = () => {
   const { user, token, API_URL, logout } = useAuth();
@@ -47,6 +52,7 @@ const Dashboard = () => {
   // Live Admin Overview state
   const [adminChits, setAdminChits] = useState([]);
   const [selectedChitId, setSelectedChitId] = useState('');
+  const [selectedMonthNum, setSelectedMonthNum] = useState(1);
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     const yyyy = today.getFullYear();
@@ -158,128 +164,98 @@ const Dashboard = () => {
 
     // Current selected chit for overview
     const currentOverviewChit = adminChits.find(c => c.id === selectedChitId) || adminChits[0];
+    const activeChit = chitMatrix && (chitMatrix.id === currentOverviewChit?.id || chitMatrix._id === currentOverviewChit?.id) 
+      ? chitMatrix 
+      : currentOverviewChit;
 
-    // Compute available months for dropdown
-    const availableMonths = (() => {
-      const months = [];
-      const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-      ];
-      if (currentOverviewChit?.startDate) {
-        const d = new Date(currentOverviewChit.startDate);
-        const totalMo = currentOverviewChit.durationMonths || 10;
-        for (let i = 0; i < totalMo; i++) {
-          const mDate = new Date(d);
-          mDate.setMonth(d.getMonth() + i);
-          months.push(`${monthNames[mDate.getMonth()]} ${mDate.getFullYear()}`);
-        }
-      } else {
-        ['August 2026', 'September 2026', 'October 2026', 'November 2026', 'December 2026'].forEach(m => {
-          months.push(m);
+    // List of months for this scheme
+    const chitMonthsList = (() => {
+      if (!currentOverviewChit) return [];
+      const totalMo = currentOverviewChit.durationMonths || 10;
+      const list = [];
+      for (let m = 1; m <= totalMo; m++) {
+        list.push({
+          monthNumber: m,
+          label: formatChitMonthWithNum(currentOverviewChit, m)
         });
       }
-      if (!months.includes('September 2026')) {
-        months.unshift('September 2026');
-      }
-      return months;
+      return list;
     })();
 
-    // Derive current month and target month number from selectedDate
-    const selectedDateObj = selectedDate ? new Date(selectedDate) : new Date();
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    const selectedMonth = `${monthNames[selectedDateObj.getMonth()]} ${selectedDateObj.getFullYear()}`;
+    const targetMonthNum = selectedMonthNum || currentOverviewChit?.currentMonth || 1;
+    const selectedMonth = formatChitMonthFull(currentOverviewChit, targetMonthNum);
 
-    // Calculate target month number for chit calculation
-    let targetMonthNum = 1;
-    if (currentOverviewChit?.startDate) {
-      const sDate = new Date(currentOverviewChit.startDate);
-      const diffMo = (selectedDateObj.getFullYear() - sDate.getFullYear()) * 12 + (selectedDateObj.getMonth() - sDate.getMonth()) + 1;
-      const totalMo = currentOverviewChit.durationMonths || 10;
-      targetMonthNum = Math.min(Math.max(1, diffMo), totalMo);
-    } else {
-      const selectedMonthIndex = Math.max(0, availableMonths.indexOf(selectedMonth));
-      targetMonthNum = selectedMonthIndex !== -1 ? (selectedMonthIndex + 1) : (selectedDateObj.getMonth() + 1);
-    }
-
-    const totalMembersVal = currentOverviewChit?.members?.filter(m => m.status === 'approved').length 
-      || currentOverviewChit?.totalMembers 
-      || 10;
+    const approvedMembers = (activeChit?.members || []).filter(m => m.status === 'approved' || !m.status);
+    const totalMembersVal = approvedMembers.length || activeChit?.totalMembers || 0;
     
-    const chitValueNum = Number(currentOverviewChit?.chitValue || 100000);
-    const chitDurationVal = currentOverviewChit?.durationMonths || 10;
-    const baseMonthlyContribution = Number(currentOverviewChit?.monthlyContribution || (chitValueNum / chitDurationVal) || 10000);
+    const chitValueNum = Number(activeChit?.chitValue || 0);
+    const chitDurationVal = activeChit?.durationMonths || 10;
+    const baseMonthlyContribution = Number(activeChit?.monthlyContribution || (chitDurationVal > 0 ? Math.round(chitValueNum / chitDurationVal) : 0));
 
-    const matrixPayments = chitMatrix?.payments || currentOverviewChit?.payments || [];
-    const targetMonthPayments = matrixPayments.filter(p => Number(p.monthNumber) === targetMonthNum && p.status === 'approved');
-    const livePaidAmount = targetMonthPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    // Configured monthly due for this target month if set by admin
+    const configuredDueObj = (activeChit?.monthlyDues || []).find(d => Number(d.monthNumber) === targetMonthNum);
+    const duePerMember = configuredDueObj?.dueAmount != null 
+      ? Number(configuredDueObj.dueAmount) 
+      : baseMonthlyContribution;
 
-    const paidVal = livePaidAmount > 0 ? livePaidAmount : 95000;
-    const expectedTotalDue = totalMembersVal * baseMonthlyContribution;
-    const dueVal = expectedTotalDue > 0 ? (livePaidAmount > 0 ? expectedTotalDue : 102000) : 102000;
-    const pendingVal = Math.max(0, dueVal - paidVal) || 7000;
+    // Payments for this target month
+    const allPayments = activeChit?.payments || [];
+    const targetMonthPayments = allPayments.filter(p => Number(p.monthNumber) === targetMonthNum && p.status === 'approved');
+    const livePaidAmount = targetMonthPayments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    const paidVal = livePaidAmount;
 
-    const paidMembersCount = targetMonthPayments.length;
-    const pendingMembersVal = livePaidAmount > 0 
-      ? Math.max(0, totalMembersVal - paidMembersCount) 
-      : 1;
+    // Total expected due for this month
+    const dueVal = totalMembersVal * duePerMember;
 
-    const targetAuction = currentOverviewChit?.auctions?.find(a => Number(a.monthNumber) === targetMonthNum) 
-      || currentOverviewChit?.auctions?.[0];
+    // Pending collection
+    const pendingVal = Math.max(0, dueVal - paidVal);
+
+    // Paid members count (unique approved users)
+    const paidUserIds = new Set(
+      targetMonthPayments
+        .map(p => p.userId?.id || p.userId?._id || p.userId || p.user?.id || p.user?._id)
+        .filter(Boolean)
+    );
+    const paidMembersCount = paidUserIds.size;
+    const pendingMembersVal = Math.max(0, totalMembersVal - paidMembersCount);
+
+    // Target month auction
+    const targetAuction = (activeChit?.auctions || []).find(a => Number(a.monthNumber) === targetMonthNum);
     
-    const winnerCodeVal = targetAuction?.winningMember?.memberId 
-      || targetAuction?.winningTicket 
-      || (targetAuction?.winningMember ? 'INA' + String(targetAuction.winningMember.id).replace(/\D/g, '').slice(-4) : 'INA2605');
+    const hasWinner = Boolean(targetAuction?.winningMember || targetAuction?.winningMemberId || targetAuction?.winningTicket);
+    const winnerCodeVal = hasWinner 
+      ? (targetAuction.winningMember?.memberId || targetAuction.winningTicket || ('MEMBER-' + (targetAuction.winningChitMember?.slotNumber || 1)))
+      : 'Not Held';
 
-    const winnerNameVal = targetAuction?.winningMember?.name || 'K Leelakar 1';
-    const winnerNextDueVal = Number(targetAuction?.nextPayableAmount || 11000);
+    const winnerNameVal = hasWinner
+      ? (targetAuction.winningMember?.name || 'Prize Winner')
+      : `Auction pending for ${selectedMonth}`;
 
-    const statCardStyle = {
-      backgroundColor: '#ffffff',
-      borderRadius: '18px',
-      border: '1px solid #e2e8f0',
-      padding: '1.35rem 1.45rem',
-      boxShadow: '0 4px 15px -2px rgba(15, 23, 42, 0.04)',
-      transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-      cursor: 'pointer',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      minHeight: '115px',
-      position: 'relative',
-      overflow: 'hidden'
+    const winnerNextDueVal = targetAuction?.nextPayableAmount != null
+      ? Number(targetAuction.nextPayableAmount)
+      : (targetAuction?.winningBidAmount != null ? Number(targetAuction.winningBidAmount) : duePerMember);
+
+    const handleDateChange = (newDateStr) => {
+      setSelectedDate(newDateStr);
+      if (currentOverviewChit?.startDate && newDateStr) {
+        const d = new Date(newDateStr);
+        const s = new Date(currentOverviewChit.startDate);
+        const diffMo = (d.getFullYear() - s.getFullYear()) * 12 + (d.getMonth() - s.getMonth()) + 1;
+        const totalMo = currentOverviewChit.durationMonths || 10;
+        setSelectedMonthNum(Math.min(Math.max(1, diffMo), totalMo));
+      }
     };
 
-    const cardHeaderStyle = {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '0.6rem'
-    };
-
-    const cardLabelStyle = {
-      fontSize: '0.72rem',
-      fontWeight: 800,
-      color: '#64748b',
-      letterSpacing: '0.5px',
-      textTransform: 'uppercase'
-    };
-
-    const cardValueStyle = {
-      fontSize: '1.8rem',
-      fontWeight: 800,
-      lineHeight: 1.15,
-      color: '#0f172a'
-    };
-
-    const cardSubtextStyle = {
-      fontSize: '0.85rem',
-      fontWeight: 500,
-      color: '#64748b',
-      marginTop: '0.35rem'
+    const handleMonthNumChange = (newMonthNum) => {
+      const mNum = Number(newMonthNum);
+      setSelectedMonthNum(mNum);
+      const d = getChitMonthDate(currentOverviewChit, mNum);
+      if (d) {
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(Math.min(new Date(selectedDate).getDate() || 1, 28)).padStart(2, '0');
+        setSelectedDate(`${yyyy}-${mm}-${dd}`);
+      }
     };
 
     return (
@@ -287,64 +263,39 @@ const Dashboard = () => {
 
         {/* Live Admin Dashboard Header with Month & Group Filter */}
         <ScrollAnimationWrapper>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
             <div>
-              <h1 style={{ fontSize: '1.95rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
+              <h1 style={{ fontSize: '1.85rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>
                 Admin Dashboard
               </h1>
-              <p style={{ color: '#64748b', fontSize: '0.98rem', fontWeight: 500, margin: '0.25rem 0 0 0' }}>
+              <p style={{ color: '#64748b', fontSize: '0.92rem', fontWeight: 500, margin: '0.2rem 0 0 0' }}>
                 Live Chit Fund Management Overview
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-              {/* Calendar Date Picker */}
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                backgroundColor: '#ffffff',
-                border: '1px solid #cbd5e1',
-                borderRadius: '0.65rem',
-                padding: '0.45rem 0.85rem',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                boxSizing: 'border-box'
-              }}>
-                <Calendar size={16} color="#3b5bdb" style={{ flexShrink: 0 }} />
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+            <div className="admin-dashboard-filters" style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+              {/* Group / Scheme Selector */}
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={selectedChitId}
+                  onChange={(e) => {
+                    setSelectedChitId(e.target.value);
+                    setSelectedMonthNum(1);
+                  }}
+                  className="filter-select"
                   style={{
-                    border: 'none',
-                    outline: 'none',
-                    backgroundColor: 'transparent',
+                    appearance: 'none',
+                    padding: '0.55rem 2.2rem 0.55rem 0.95rem',
+                    borderRadius: '0.65rem',
+                    border: '1.5px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
                     color: '#0f172a',
                     fontWeight: 700,
                     fontSize: '0.88rem',
                     cursor: 'pointer',
-                    fontFamily: 'inherit'
-                  }}
-                />
-              </div>
-
-              {/* Group Selector */}
-              <div style={{ position: 'relative' }}>
-                <select
-                  value={selectedChitId}
-                  onChange={(e) => setSelectedChitId(e.target.value)}
-                  style={{
-                    appearance: 'none',
-                    padding: '0.55rem 2.2rem 0.55rem 1rem',
-                    borderRadius: '0.65rem',
-                    border: '1px solid #cbd5e1',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b',
-                    fontWeight: 600,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                    outline: 'none'
+                    outline: 'none',
+                    minWidth: '135px'
                   }}
                 >
                   {adminChits.length > 0 ? (
@@ -352,10 +303,68 @@ const Dashboard = () => {
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))
                   ) : (
-                    <option value="">INAVOLU-CHIT-01</option>
+                    <option value="">No schemes available</option>
                   )}
                 </select>
                 <ChevronDown size={14} color="#64748b" style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+
+              {/* Month & Year Scheme Dropdown */}
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={targetMonthNum}
+                  onChange={(e) => handleMonthNumChange(e.target.value)}
+                  className="filter-select"
+                  style={{
+                    appearance: 'none',
+                    padding: '0.55rem 2.2rem 0.55rem 0.95rem',
+                    borderRadius: '0.65rem',
+                    border: '1.5px solid #cbd5e1',
+                    backgroundColor: '#ffffff',
+                    color: '#0f172a',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    outline: 'none',
+                    minWidth: '165px'
+                  }}
+                >
+                  {chitMonthsList.map(m => (
+                    <option key={m.monthNumber} value={m.monthNumber}>{m.label}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} color="#64748b" style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+              </div>
+
+              {/* Calendar Date Picker */}
+              <div className="date-picker-wrap" style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                backgroundColor: '#ffffff',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '0.65rem',
+                padding: '0.45rem 0.75rem',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                boxSizing: 'border-box'
+              }}>
+                <Calendar size={15} color="#3b5bdb" style={{ flexShrink: 0 }} />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  style={{
+                    border: 'none',
+                    outline: 'none',
+                    backgroundColor: 'transparent',
+                    color: '#0f172a',
+                    fontWeight: 700,
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit'
+                  }}
+                />
               </div>
 
               {/* Refresh Button */}
@@ -367,7 +376,7 @@ const Dashboard = () => {
                   width: '38px',
                   height: '38px',
                   borderRadius: '0.65rem',
-                  border: '1px solid #cbd5e1',
+                  border: '1.5px solid #cbd5e1',
                   backgroundColor: '#ffffff',
                   color: '#475569',
                   display: 'flex',
@@ -375,177 +384,136 @@ const Dashboard = () => {
                   justifyContent: 'center',
                   cursor: 'pointer',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  flexShrink: 0
                 }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
               >
                 <RefreshCw size={16} className={loading ? "spin" : ""} />
-              </button>
-
-              {/* Sign Out Button */}
-              <button
-                onClick={handleLogout}
-                title="Sign out of Admin Portal"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  padding: '0.55rem 0.9rem',
-                  borderRadius: '0.65rem',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  backgroundColor: '#ffffff',
-                  color: '#dc2626',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(220, 38, 38, 0.08)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = '#dc2626';
-                  e.currentTarget.style.color = '#ffffff';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = '#ffffff';
-                  e.currentTarget.style.color = '#dc2626';
-                }}
-              >
-                <LogOut size={15} />
-                <span>Sign Out</span>
               </button>
             </div>
           </div>
         </ScrollAnimationWrapper>
 
         {/* 8 Live Stat Cards Grid */}
-        <div 
-          className="admin-overview-grid" 
-          style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(4, 1fr)', 
-            gap: '1.25rem', 
-            marginBottom: '2rem' 
-          }}
-        >
+        <div className="admin-overview-grid">
           {/* Card 1: TOTAL MEMBERS */}
           <div 
             onClick={() => navigate('/admin/all-users')} 
-            style={{ ...statCardStyle, borderTop: '3.5px solid #3b5bdb', boxShadow: '0 8px 24px -4px rgba(59, 91, 219, 0.12)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px -4px rgba(59, 91, 219, 0.22)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px -4px rgba(59, 91, 219, 0.12)'; }}
+            className="admin-stat-card"
+            style={{ borderTop: '3.5px solid #3b5bdb' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#3b5bdb' }}>TOTAL MEMBERS</span>
-              <Users size={18} color="#3b5bdb" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#3b5bdb' }}>TOTAL MEMBERS</span>
+              <Users size={17} color="#3b5bdb" />
             </div>
-            <div style={cardValueStyle}>{totalMembersVal}</div>
-            <div style={cardSubtextStyle}>{currentOverviewChit?.name || 'INAVOLU-CHIT-01'}</div>
+            <div className="admin-stat-card-value">{totalMembersVal}</div>
+            <div className="admin-stat-card-subtext">{currentOverviewChit?.name || 'Chit Scheme'}</div>
           </div>
 
           {/* Card 2: CHIT VALUE */}
           <div 
             onClick={() => navigate('/admin/chits')} 
-            style={{ ...statCardStyle, borderTop: '3.5px solid #d97706', boxShadow: '0 8px 24px -4px rgba(245, 158, 11, 0.12)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px -4px rgba(245, 158, 11, 0.22)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 24px -4px rgba(245, 158, 11, 0.12)'; }}
+            className="admin-stat-card"
+            style={{ borderTop: '3.5px solid #d97706' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#d97706' }}>CHIT VALUE</span>
-              <Coins size={18} color="#d97706" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#d97706' }}>CHIT VALUE</span>
+              <Coins size={17} color="#d97706" />
             </div>
-            <div style={cardValueStyle}>₹{chitValueNum.toLocaleString('en-IN')}</div>
-            <div style={cardSubtextStyle}>{chitDurationVal} Months Duration</div>
+            <div className="admin-stat-card-value">₹{chitValueNum.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-card-subtext">{chitDurationVal} Months Duration</div>
           </div>
 
           {/* Card 3: PAID · [MONTH] */}
           <div 
-            onClick={() => navigate('/admin/payment-history')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #3b5bdb', background: 'linear-gradient(180deg, #ffffff 0%, #f0f0ff 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(59, 91, 219, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            onClick={() => navigate('/admin/chits')} 
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #3b5bdb', background: 'linear-gradient(180deg, #ffffff 0%, #f0f0ff 100%)' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#3b5bdb' }}>PAID · {selectedMonth.toUpperCase()}</span>
-              <CheckCircle size={16} color="#3b5bdb" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#3b5bdb' }}>PAID · {selectedMonth.toUpperCase()}</span>
+              <CheckCircle size={15} color="#3b5bdb" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#3b5bdb' }}>₹{paidVal.toLocaleString('en-IN')}</div>
-            <div style={{ ...cardSubtextStyle, color: '#1e3a8a' }}>Total installments collected</div>
+            <div className="admin-stat-card-value" style={{ color: '#3b5bdb' }}>₹{paidVal.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-card-subtext" style={{ color: '#1e3a8a' }}>
+              {paidMembersCount} of {totalMembersVal} members paid
+            </div>
           </div>
 
           {/* Card 4: DUE · [MONTH] */}
           <div 
-            onClick={() => navigate('/admin/payments')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #0284c7' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(2, 132, 199, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            onClick={() => navigate('/admin/chits')} 
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #0284c7' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#0284c7' }}>DUE · {selectedMonth.toUpperCase()}</span>
-              <Calendar size={16} color="#0284c7" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#0284c7' }}>DUE · {selectedMonth.toUpperCase()}</span>
+              <Calendar size={15} color="#0284c7" />
             </div>
-            <div style={cardValueStyle}>₹{dueVal.toLocaleString('en-IN')}</div>
-            <div style={cardSubtextStyle}>Target expected total</div>
+            <div className="admin-stat-card-value">₹{dueVal.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-card-subtext">₹{duePerMember.toLocaleString('en-IN')} / member due</div>
           </div>
 
           {/* Card 5: PENDING · [MONTH] */}
           <div 
-            onClick={() => navigate('/admin/payments')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #ea580c', background: 'linear-gradient(180deg, #ffffff 0%, #fff7ed 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(234, 88, 12, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            onClick={() => navigate('/admin/chits')} 
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #ea580c', background: 'linear-gradient(180deg, #ffffff 0%, #fff7ed 100%)' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#ea580c' }}>PENDING · {selectedMonth.toUpperCase()}</span>
-              <AlertCircle size={16} color="#ea580c" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#ea580c' }}>PENDING · {selectedMonth.toUpperCase()}</span>
+              <AlertCircle size={15} color="#ea580c" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#ea580c' }}>₹{pendingVal.toLocaleString('en-IN')}</div>
-            <div style={{ ...cardSubtextStyle, color: '#c2410c' }}>Pending balance due</div>
+            <div className="admin-stat-card-value" style={{ color: '#ea580c' }}>₹{pendingVal.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-card-subtext" style={{ color: '#c2410c' }}>
+              {pendingVal === 0 ? 'All dues collected' : 'Pending balance due'}
+            </div>
           </div>
 
           {/* Card 6: PENDING MEMBERS */}
           <div 
-            onClick={() => navigate('/admin/payments')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #e11d48', background: 'linear-gradient(180deg, #ffffff 0%, #fff1f2 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(225, 29, 72, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            onClick={() => navigate('/admin/chits')} 
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #e11d48', background: 'linear-gradient(180deg, #ffffff 0%, #fff1f2 100%)' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#e11d48' }}>PENDING MEMBERS</span>
-              <Clock size={16} color="#e11d48" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#e11d48' }}>PENDING MEMBERS</span>
+              <Clock size={15} color="#e11d48" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#e11d48' }}>{pendingMembersVal}</div>
-            <div style={{ ...cardSubtextStyle, color: '#be123c' }}>Awaiting verification</div>
+            <div className="admin-stat-card-value" style={{ color: '#e11d48' }}>{pendingMembersVal}</div>
+            <div className="admin-stat-card-subtext" style={{ color: '#be123c' }}>
+              {pendingMembersVal === 0 ? 'Fully paid for month' : `${pendingMembersVal} awaiting payment`}
+            </div>
           </div>
 
           {/* Card 7: WINNER · THIS MONTH */}
           <div 
             onClick={() => navigate('/admin/auctions')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #8b5cf6', background: 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(139, 92, 246, 0.12)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #8b5cf6', background: 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#7c3aed' }}>WINNER · THIS MONTH</span>
-              <Award size={16} color="#7c3aed" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#7c3aed' }}>WINNER · {hasWinner ? 'THIS MONTH' : 'AUCTION'}</span>
+              <Award size={15} color="#7c3aed" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#6d28d9' }}>{winnerCodeVal}</div>
-            <div style={{ ...cardSubtextStyle, color: '#5b21b6' }}>{winnerNameVal}</div>
+            <div className="admin-stat-card-value" style={{ color: '#6d28d9', fontSize: hasWinner ? undefined : '1.18rem' }}>{winnerCodeVal}</div>
+            <div className="admin-stat-card-subtext" style={{ color: '#5b21b6' }}>{winnerNameVal}</div>
           </div>
 
           {/* Card 8: WINNER NEXT-MO DUE */}
           <div 
             onClick={() => navigate('/admin/auctions')} 
-            style={{ ...statCardStyle, borderTop: '3px solid #f59e0b', background: 'linear-gradient(180deg, #ffffff 0%, #fffbeb 100%)' }}
-            onMouseOver={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 10px 25px -3px rgba(245, 158, 11, 0.15)'; }}
-            onMouseOut={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px -2px rgba(15, 23, 42, 0.04)'; }}
+            className="admin-stat-card"
+            style={{ borderTop: '3px solid #f59e0b', background: 'linear-gradient(180deg, #ffffff 0%, #fffbeb 100%)' }}
           >
-            <div style={cardHeaderStyle}>
-              <span style={{ ...cardLabelStyle, color: '#b45309' }}>WINNER NEXT-MO DUE</span>
-              <Sparkles size={16} color="#d97706" />
+            <div className="admin-stat-card-header">
+              <span className="admin-stat-card-label" style={{ color: '#b45309' }}>WINNER NEXT-MO DUE</span>
+              <Sparkles size={15} color="#d97706" />
             </div>
-            <div style={{ ...cardValueStyle, color: '#b45309' }}>₹{winnerNextDueVal.toLocaleString('en-IN')}</div>
-            <div style={{ ...cardSubtextStyle, color: '#92400e' }}>Next installment amount</div>
+            <div className="admin-stat-card-value" style={{ color: '#b45309' }}>₹{winnerNextDueVal.toLocaleString('en-IN')}</div>
+            <div className="admin-stat-card-subtext" style={{ color: '#92400e' }}>
+              {targetAuction?.dividendPerMember ? `Dividend: ₹${Number(targetAuction.dividendPerMember).toLocaleString('en-IN')}` : 'Installment amount'}
+            </div>
           </div>
         </div>
 
@@ -565,23 +533,18 @@ const Dashboard = () => {
                       <FileCheck size={22} color="#fff" />
                     </div>
                     <div>
-                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>Payment Verifications</h3>
-                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Review submitted receipts</span>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>Monthly Dues & Payments</h3>
+                      <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Record member payments & reduce dues</span>
                     </div>
                   </div>
-                  {(stats?.pendingPaymentsCount || 0) > 0 && (
-                    <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: '0.82rem', fontWeight: 800, padding: '0.3rem 0.75rem', borderRadius: '1rem', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)' }}>
-                      {stats?.pendingPaymentsCount} Pending
-                    </span>
-                  )}
                 </div>
               </div>
               <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <p style={{ fontSize: '0.95rem', color: '#4b5563', margin: 0, fontWeight: 500, flex: '1 1 200px', minWidth: 0 }}>
-                  Verify user transaction receipts to confirm monthly installments.
+                  Manage monthly due amounts and record payments with uploaded receipt proofs.
                 </p>
-                <Link to="/admin/payments" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#eef2ff', color: '#1e3a8a', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(59, 91, 219, 0.32)', flexShrink: 0, boxShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>
-                  <span>Review</span><ArrowRight size={15} />
+                <Link to="/admin/chits" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#eef2ff', color: '#1e3a8a', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid rgba(59, 91, 219, 0.32)', flexShrink: 0, boxShadow: '0 2px 8px rgba(59, 91, 219, 0.16)' }}>
+                  <span>View Schemes</span><ArrowRight size={15} />
                 </Link>
               </div>
             </div>
@@ -612,26 +575,26 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Chit Approvals */}
+            {/* Chit Auctions */}
             <div style={{ backgroundColor: '#fff', borderRadius: '1.25rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', overflow: 'hidden' }}>
-              <div style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #8b5cf6 60%, #a78bfa 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%)', padding: '1.25rem 1.5rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: '-15px', right: '-15px', width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.07)' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ width: '42px', height: '42px', borderRadius: '50%', backgroundColor: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <CheckCircle size={22} color="#fff" />
+                    <Gavel size={22} color="#fff" />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>Chit Enrollments</h3>
-                    <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Approve member join requests</span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff', margin: 0 }}>Chit Auctions</h3>
+                    <span style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>Conduct monthly auctions & payouts</span>
                   </div>
                 </div>
               </div>
               <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <p style={{ fontSize: '0.95rem', color: '#4b5563', margin: 0, fontWeight: 500, flex: '1 1 200px', minWidth: 0 }}>
-                  Review and approve pending member enrollment requests for chit pools.
+                  Award monthly prize payouts to winning members and save receipt records.
                 </p>
-                <Link to="/admin/chit-approvals" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#f5f3ff', color: '#7c3aed', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #ddd6fe', flexShrink: 0 }}>
-                  <span>Review</span><ArrowRight size={15} />
+                <Link to="/admin/auctions" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#eff6ff', color: '#1d4ed8', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #bfdbfe', flexShrink: 0 }}>
+                  <span>Open Auctions</span><ArrowRight size={15} />
                 </Link>
               </div>
             </div>
@@ -645,17 +608,17 @@ const Dashboard = () => {
                       <Users size={18} color="#fff" />
                     </div>
                     <div>
-                      <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', margin: 0 }}>User Approvals</h4>
-                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{stats?.pendingApprovals || 0} pending</span>
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', margin: 0 }}>All Members Directory</h4>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{stats?.totalUsers || 0} registered members</span>
                     </div>
                   </div>
                 </div>
                 <div style={{ padding: '0.85rem 1.15rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <p style={{ fontSize: '0.95rem', color: '#4b5563', margin: 0, fontWeight: 500, flex: '1 1 200px', minWidth: 0 }}>
-                    Approve or reject new member registrations and verify KYC documents.
+                    Manage member profiles, view KYC documents, and monitor customer ledgers.
                   </p>
-                  <Link to="/admin/users" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff7ed', color: '#ea580c', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #ffedd5', flexShrink: 0 }}>
-                    <span>Review KYC</span><ArrowRight size={15} />
+                  <Link to="/admin/all-users" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', backgroundColor: '#fff7ed', color: '#ea580c', fontWeight: 800, fontSize: '0.9rem', padding: '0.55rem 1.1rem', borderRadius: '0.75rem', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #ffedd5', flexShrink: 0 }}>
+                    <span>All Users</span><ArrowRight size={15} />
                   </Link>
                 </div>
               </div>
@@ -693,9 +656,9 @@ const Dashboard = () => {
               <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#111827', margin: '0 0 1.15rem 0' }}>Quick Actions</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 {[
-                  { label: 'System Records', sub: 'View all chit ledgers', path: '/admin/records', color: '#3b5bdb', bg: '#eff6ff' },
-                  { label: 'Verify Payments', sub: `${stats?.pendingPaymentsCount || 0} awaiting`, path: '/admin/payments', color: '#3b5bdb', bg: '#eff6ff' },
-                  { label: 'Manage Chits', sub: 'Create & configure', path: '/admin/chits', color: '#7c3aed', bg: '#f5f3ff' },
+                  { label: 'Chit Schemes & Dues', sub: 'Manage chits & monthly dues', path: '/admin/chits', color: '#3b5bdb', bg: '#eff6ff' },
+                  { label: 'All Users', sub: 'Registered members & profiles', path: '/admin/all-users', color: '#16a34a', bg: '#f0fdf4' },
+                  { label: 'Chit Auctions', sub: 'Award payouts & proof', path: '/admin/auctions', color: '#7c3aed', bg: '#f5f3ff' },
                 ].map((item, idx) => (
                   <Link key={idx} to={item.path} style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -730,33 +693,129 @@ const Dashboard = () => {
         </div>
 
         <style>{`
-          .dashboard-greeting {
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: #111827;
-            line-height: 1.2;
+          .admin-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.15rem;
+            margin-bottom: 2rem;
           }
-          .stat-label {
-            font-size: 0.88rem;
-            color: #4b5563;
-            font-weight: 700;
-            display: block;
-            margin-bottom: 0.35rem;
+
+          .admin-stat-card {
+            background-color: #ffffff;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.25rem 1.35rem;
+            box-shadow: 0 4px 15px -2px rgba(15, 23, 42, 0.04);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justifyContent: space-between;
+            min-height: 115px;
+            position: relative;
+            overflow: hidden;
+            box-sizing: border-box;
+          }
+
+          .admin-stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.1);
+          }
+
+          .admin-stat-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+          }
+
+          .admin-stat-card-label {
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #64748b;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
-          .stat-value {
-            font-size: 1.6rem;
+
+          .admin-stat-card-value {
+            font-size: 1.65rem;
             font-weight: 800;
-            display: block;
+            line-height: 1.15;
+            color: #0f172a;
+            word-break: break-word;
           }
-          @media (max-width: 768px) {
-            .dashboard-greeting { font-size: 1.75rem; }
+
+          .admin-stat-card-subtext {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-top: 0.35rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          @media (max-width: 1024px) {
+            .admin-overview-grid {
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 1rem !important;
+            }
+          }
+
+          @media (max-width: 640px) {
+            .admin-overview-grid {
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 0.65rem !important;
+              margin-bottom: 1.5rem !important;
+            }
+            .admin-stat-card {
+              padding: 0.85rem 0.9rem !important;
+              border-radius: 14px !important;
+              min-height: 100px !important;
+            }
+            .admin-stat-card-label {
+              font-size: 0.63rem !important;
+              letter-spacing: 0.2px !important;
+            }
+            .admin-stat-card-value {
+              font-size: 1.25rem !important;
+            }
+            .admin-stat-card-subtext {
+              font-size: 0.72rem !important;
+            }
+            .admin-dashboard-filters {
+              width: 100% !important;
+              display: grid !important;
+              grid-template-columns: 1fr 1fr auto !important;
+              gap: 0.5rem !important;
+            }
+            .admin-dashboard-filters .filter-select {
+              width: 100% !important;
+              min-width: 0 !important;
+              padding: 0.5rem 1.6rem 0.5rem 0.65rem !important;
+              font-size: 0.8rem !important;
+            }
+            .admin-dashboard-filters .date-picker-wrap {
+              grid-column: span 2 !important;
+              width: 100% !important;
+              justify-content: center !important;
+            }
             .dashboard-grid-layout {
               grid-template-columns: 1fr !important;
               gap: 1.25rem !important;
             }
-            .stat-label { font-size: 0.75rem; }
-            .stat-value { font-size: 1.25rem; }
+          }
+
+          @media (max-width: 380px) {
+            .admin-stat-card-value {
+              font-size: 1.12rem !important;
+            }
+            .admin-stat-card-label {
+              font-size: 0.58rem !important;
+            }
           }
         `}</style>
       </div>

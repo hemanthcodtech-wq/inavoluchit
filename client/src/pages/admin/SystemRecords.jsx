@@ -24,6 +24,7 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import XLSX from 'xlsx-js-style';
+import ProofUploader from '../../components/ProofUploader';
 
 // Center-align every cell (Excel right-aligns numbers by default) and bold the header row
 const centerSheet = (sheet) => {
@@ -831,45 +832,59 @@ const SystemRecords = () => {
                               <CheckCircle size={16} />
                               <span>Month {record.chit.currentMonth} Payment Status</span>
                             </h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
                               {record.chit.members.filter(m => m.status === 'approved').map(member => {
-                                const hasPaidCurrentMonth = record.payments.some(p => 
-                                  p.userId === member.userId && 
-                                  p.monthNumber === record.chit.currentMonth && 
-                                  p.status === 'approved'
-                                );
+                                const configuredMonthDue = (record.chit.monthlyDues || []).find(d => d.monthNumber === record.chit.currentMonth)?.dueAmount || record.chit.monthlyContribution;
+                                const userApprovedSlots = record.chit.members.filter(m => m.userId === member.userId && m.status === 'approved').length || 1;
+                                const memberTotalDue = configuredMonthDue * userApprovedSlots;
+                                const memberPayments = record.payments.filter(p => p.userId === member.userId && p.monthNumber === record.chit.currentMonth && p.status === 'approved');
+                                const memberPaidAmount = memberPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+                                const memberRemainingDue = Math.max(0, memberTotalDue - memberPaidAmount);
+                                const isFullyPaid = memberRemainingDue === 0;
+                                const isPartial = memberPaidAmount > 0 && memberRemainingDue > 0;
+                                
                                 const freeze = record.chit.freezes?.find(f => f.monthNumber === record.chit.currentMonth);
                                 const isFrozenByMember = freeze?.userId === member.userId;
                                 
                                 return (
-                                  <div key={member.user?.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: '#fff', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
-                                    <div>
-                                      <span style={{ fontWeight: 600, display: 'block' }}>{member.user?.name}</span>
-                                      <span style={{ color: 'var(--color-secondary)', fontSize: '0.75rem' }}>{member.user?.phone}</span>
+                                  <div key={member.user?.id || member.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', padding: '0.85rem', background: '#fff', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                      <div>
+                                        <span style={{ fontWeight: 700, display: 'block', color: '#0f172a' }}>{member.user?.name}</span>
+                                        <span style={{ color: 'var(--color-secondary)', fontSize: '0.75rem' }}>{member.user?.phone} ({userApprovedSlots} slot{userApprovedSlots > 1 ? 's' : ''})</span>
+                                      </div>
+                                      <div>
+                                        {isFrozenByMember ? (
+                                          <span className="badge" style={{ fontSize: '0.7rem', backgroundColor: '#dbeafe', color: '#2563eb' }}>Taken Payment</span>
+                                        ) : isFullyPaid ? (
+                                          <span className="badge badge-approved" style={{ fontSize: '0.7rem' }}>Paid (₹{memberPaidAmount.toLocaleString()})</span>
+                                        ) : isPartial ? (
+                                          <span className="badge" style={{ fontSize: '0.7rem', backgroundColor: '#fef3c7', color: '#b45309' }}>₹{memberRemainingDue.toLocaleString()} Due (Partial)</span>
+                                        ) : (
+                                          <span className="badge badge-pending" style={{ fontSize: '0.7rem', color: '#dc2626', backgroundColor: '#fee2e2' }}>₹{memberRemainingDue.toLocaleString()} Due</span>
+                                        )}
+                                      </div>
                                     </div>
-                                    {isFrozenByMember ? (
-                                      <span className="badge" style={{ fontSize: '0.7rem', backgroundColor: '#dbeafe', color: '#2563eb', border: '1px solid #2563eb22' }}>Taken Payment</span>
-                                    ) : hasPaidCurrentMonth ? (
-                                      <span className="badge badge-approved" style={{ fontSize: '0.7rem' }}>Paid</span>
-                                    ) : (
-                                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+
+                                    {!isFullyPaid && !isFrozenByMember && (
+                                      <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
                                         <button
-                                          onClick={() => handleMarkAsPaid(record.chit.id, member.userId, record.chit.monthlyContribution, record.chit.currentMonth)}
+                                          onClick={() => handleMarkAsPaid(record.chit.id, member.userId, memberRemainingDue, record.chit.currentMonth)}
                                           className="btn-primary"
-                                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.7rem', borderRadius: 'var(--radius-sm)' }}
+                                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.72rem', borderRadius: 'var(--radius-sm)' }}
                                         >
-                                          Mark as Paid
+                                          Pay ₹{memberRemainingDue.toLocaleString()}
                                         </button>
                                         <button
                                           onClick={() => setUploadModal({
                                             isOpen: true,
                                             chitId: record.chit.id,
                                             userId: member.userId,
-                                            amount: record.chit.monthlyContribution,
+                                            amount: memberRemainingDue,
                                             monthNumber: record.chit.currentMonth
                                           })}
                                           className="btn-secondary"
-                                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.7rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-primary)' }}
+                                          style={{ padding: '0.35rem 0.75rem', fontSize: '0.72rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-primary)' }}
                                         >
                                           Upload Proof
                                         </button>
@@ -1042,13 +1057,12 @@ const SystemRecords = () => {
                   style={{ width: '100%' }}
                 />
               </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Payment Proof Image</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={e => setUploadData({ ...uploadData, file: e.target.files[0] })}
-                  style={{ width: '100%', fontSize: '0.85rem' }}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <ProofUploader
+                  label="Receipt Proof Image"
+                  description="Upload file or take live camera photo"
+                  required={true}
+                  onFileSelected={file => setUploadData({ ...uploadData, file })}
                 />
               </div>
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>

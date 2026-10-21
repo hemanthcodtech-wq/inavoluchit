@@ -123,20 +123,8 @@ const Home = () => {
   }, [API_URL]);
 
   // Handle "Know More" button click on Chit Schemes
-  // As requested: "if we click chit schemes it should show no more option if we click that no more option it should redirect into signin page"
   const handleKnowMore = (scheme) => {
-    if (user) {
-      // If already logged in, go to chit details / browse chits
-      navigate('/chits');
-    } else {
-      // If guest/visitor, redirect directly to sign in / login page
-      navigate('/login', { 
-        state: { 
-          fromScheme: scheme.name,
-          notice: `Please sign in to view complete details, monthly schedules, and enroll in ${scheme.name}.` 
-        } 
-      });
-    }
+    navigate('/chits');
   };
 
   const calculatedMonthly = Math.round(calcAmount / calcTenure);
@@ -230,6 +218,7 @@ const Home = () => {
                   <ArrowRight size={18} />
                 </a>
 
+                {/* Member Portal Sign In (Commented out)
                 <Link
                   to="/login"
                   className="btn-secondary"
@@ -247,6 +236,7 @@ const Home = () => {
                   <Lock size={16} color="#3b5bdb" />
                   <span>Sign In to Portal</span>
                 </Link>
+                */}
               </div>
 
               {/* Trust Badges Bar */}
@@ -591,6 +581,7 @@ const Home = () => {
             </div>
           </div>
 
+          {/* Sign In Now button (Commented out)
           <Link
             to="/login"
             className="btn-primary"
@@ -605,6 +596,7 @@ const Home = () => {
           >
             Sign In Now
           </Link>
+          */}
         </div>
       </section>
 
@@ -800,6 +792,7 @@ const Home = () => {
                   </strong>
                 </div>
 
+                {/* User login button (Commented out)
                 <button
                   onClick={() => navigate('/login')}
                   className="btn-primary"
@@ -814,6 +807,23 @@ const Home = () => {
                 >
                   Sign In to Join Scheme
                 </button>
+                */}
+                <Link
+                  to="/contact"
+                  className="btn-primary"
+                  style={{
+                    width: '100%',
+                    padding: '0.85rem',
+                    borderRadius: '12px',
+                    fontWeight: 700,
+                    fontSize: '0.95rem',
+                    textAlign: 'center',
+                    display: 'block',
+                    textDecoration: 'none'
+                  }}
+                >
+                  Contact to Join Scheme
+                </Link>
               </div>
             </div>
           </div>
@@ -1091,9 +1101,11 @@ const Home = () => {
               <Link to="/contact" style={{ color: '#cbd5e1', textDecoration: 'none', fontSize: '0.92rem', transition: 'color 0.2s', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ChevronRight size={14} color="#4f6ee8" /> Contact Helpdesk
               </Link>
+              {/* Member Portal Login (Commented out)
               <Link to="/login" style={{ color: '#f59e0b', textDecoration: 'none', fontSize: '0.92rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ChevronRight size={14} color="#f59e0b" /> Member Portal Login
               </Link>
+              */}
             </div>
           </div>
 

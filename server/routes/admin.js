@@ -32,6 +32,7 @@ router.post(
   protect,
   staff,
   upload.fields([
+    { name: 'photo', maxCount: 1 },
     { name: 'aadhar', maxCount: 1 },
     { name: 'pan', maxCount: 1 },
   ]),
@@ -76,41 +77,27 @@ router.post(
       if (
         !name?.trim() ||
         !phone?.trim() ||
-        !whatsappNumber?.trim() ||
-        !email?.trim() ||
-        !gender ||
-        !dob ||
-        !occupation?.trim() ||
         !address?.trim() ||
-        !city?.trim() ||
-        !state?.trim() ||
-        !pincode?.trim() ||
-        !aadharNumber?.trim() ||
-        !panNumber?.trim() ||
-        !nomineeName?.trim() ||
-        !nomineeRelationship?.trim() ||
-        !nomineePhone?.trim() ||
-        !nomineeDob ||
-        !nomineeAddress?.trim()
+        !aadharNumber?.trim()
       ) {
         return res.status(400).json({
           success: false,
-          message: 'All details (Personal, KYC, and Nominee Information) are strictly mandatory. Please fill in all required fields.'
+          message: 'Official Name, Mobile Number, Address, and Aadhaar Number are mandatory fields.'
         });
       }
 
-      if (!req.files?.aadhar?.[0] || !req.files?.pan?.[0]) {
+      if (!req.files?.aadhar?.[0]) {
         return res.status(400).json({
           success: false,
-          message: 'Both Aadhaar and PAN card document uploads are mandatory.'
+          message: 'Aadhaar document upload/capture is mandatory.'
         });
       }
 
       if (guarantorRequired === 'Yes') {
-        if (!guarantorName?.trim() || !guarantorRelationship?.trim() || !guarantorPhone?.trim() || !guarantorAddress?.trim() || !securityValue?.trim()) {
+        if (!guarantorName?.trim() || !guarantorRelationship?.trim() || !guarantorPhone?.trim() || !guarantorAddress?.trim()) {
           return res.status(400).json({
             success: false,
-            message: 'All guarantor and security details are mandatory when Guarantor Required is set to Yes.'
+            message: 'All guarantor details are mandatory when Guarantor is set to Yes.'
           });
         }
       }
@@ -140,6 +127,7 @@ router.post(
         ? requestedMemberId.trim()
         : await generateNextMemberId();
 
+      const photoFile = req.files?.photo?.[0];
       const aadharFile = req.files?.aadhar?.[0];
       const panFile = req.files?.pan?.[0];
 
@@ -152,16 +140,18 @@ router.post(
           whatsappNumber: whatsappNumber ? whatsappNumber.trim() : cleanPhone,
           role: 'user',
           isApproved: true,
-          gender: gender || null,
+          gender: gender || 'Male',
           dob: dob || null,
-          occupation: occupation || null,
-          address: address || null,
-          city: city || null,
-          state: state || null,
-          pincode: pincode || null,
-          remarks: remarks || null,
+          occupation: occupation ? occupation.trim() : null,
+          address: address.trim(),
+          city: city ? city.trim() : null,
+          state: state ? state.trim() : 'Andhra Pradesh',
+          pincode: pincode ? pincode.trim() : null,
+          remarks: remarks ? remarks.trim() : null,
           panNumber: panNumber ? panNumber.trim().toUpperCase() : null,
-          aadharNumber: aadharNumber ? aadharNumber.trim() : null,
+          aadharNumber: aadharNumber.trim(),
+          profileImgUrl: getFileUrl(photoFile),
+          profilePublicId: getPublicId(photoFile),
           aadharImgUrl: getFileUrl(aadharFile),
           aadharPublicId: getPublicId(aadharFile),
           panImgUrl: getFileUrl(panFile),
@@ -171,13 +161,13 @@ router.post(
           nomineePhone: nomineePhone ? nomineePhone.trim() : null,
           nomineeDob: nomineeDob || null,
           nomineeType: nomineeType || 'Primary',
-          nomineeAddress: nomineeAddress || null,
-          nomineeRemarks: nomineeRemarks || null,
+          nomineeAddress: nomineeAddress ? nomineeAddress.trim() : null,
+          nomineeRemarks: nomineeRemarks ? nomineeRemarks.trim() : null,
           guarantorRequired: guarantorRequired || 'No',
-          guarantorName: guarantorName || null,
-          guarantorRelationship: guarantorRelationship || null,
-          guarantorPhone: guarantorPhone || null,
-          guarantorAddress: guarantorAddress || null,
+          guarantorName: guarantorName ? guarantorName.trim() : null,
+          guarantorRelationship: guarantorRelationship ? guarantorRelationship.trim() : null,
+          guarantorPhone: guarantorPhone ? guarantorPhone.trim() : null,
+          guarantorAddress: guarantorAddress ? guarantorAddress.trim() : null,
           guarantorKycStatus: guarantorKycStatus || null,
           securityType: securityType || null,
           securityValue: securityValue || null,
@@ -780,6 +770,8 @@ router.get('/users-records', protect, staff, async (req, res) => {
         durationMonths: chit.durationMonths,
         monthlyContribution: chit.monthlyContribution,
         chitValue: chit.chitValue,
+        monthlyDues: chit.monthlyDues || [],
+        members: chit.members || [],
         freezes: chit.freezes,
         auctions: chit.auctions || []
       }));
@@ -958,85 +950,347 @@ router.get('/chits-records', protect, staff, async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/chits/:chitId/set-monthly-due
+// @desc    Admin sets or updates the payable installment due amount for a specific month
+// @access  Private/Staff
+router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) => {
+  try {
+    const { chitId } = req.params;
+    const { monthNumber, dueAmount, dueDate, notes } = req.body;
+
+    if (!monthNumber || dueAmount === undefined || dueAmount === null || Number(dueAmount) < 0) {
+      return res.status(400).json({ success: false, message: 'Please provide valid monthNumber and dueAmount.' });
+    }
+
+    const chit = await Chit.findById(chitId);
+    if (!chit) {
+      return res.status(404).json({ success: false, message: 'Chit scheme not found.' });
+    }
+
+    const mNum = Number(monthNumber);
+    const amount = Number(dueAmount);
+
+    if (!chit.monthlyDues) {
+      chit.monthlyDues = [];
+    }
+
+    const existingIdx = chit.monthlyDues.findIndex(d => d.monthNumber === mNum);
+    if (existingIdx >= 0) {
+      chit.monthlyDues[existingIdx].dueAmount = amount;
+      if (dueDate) chit.monthlyDues[existingIdx].dueDate = new Date(dueDate);
+      if (notes !== undefined) chit.monthlyDues[existingIdx].notes = notes;
+      chit.monthlyDues[existingIdx].updatedAt = new Date();
+    } else {
+      chit.monthlyDues.push({
+        monthNumber: mNum,
+        dueAmount: amount,
+        dueDate: dueDate ? new Date(dueDate) : null,
+        notes: notes || '',
+        updatedAt: new Date()
+      });
+    }
+
+    await chit.save();
+
+    await logAuditEvent({
+      req,
+      module: 'chit_groups',
+      action: 'Set Monthly Due',
+      recordId: chit.id,
+      result: 'Success',
+      severity: 'Info',
+      details: `Configured Month ${mNum} payable due to ₹${amount} for chit "${chit.name}"`
+    });
+
+    res.json({
+      success: true,
+      message: `Monthly due for Month ${mNum} set to ₹${amount.toLocaleString()} successfully!`,
+      data: chit
+    });
+  } catch (error) {
+    console.error('Error setting monthly due:', error);
+    res.status(500).json({ success: false, message: 'Server error setting monthly due: ' + error.message });
+  }
+});
+
+// @route   GET /api/admin/chits/:chitId/dues-summary
+// @desc    Get breakdown of configured monthly dues, amounts paid, and remaining dues for all enrolled members
+// @access  Private/Staff
+router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
+  try {
+    const { chitId } = req.params;
+    const chit = await Chit.findById(chitId).lean();
+    if (!chit) {
+      return res.status(404).json({ success: false, message: 'Chit not found.' });
+    }
+
+    const members = await ChitMember.find({ chitId: chit._id, status: 'approved' })
+      .populate('userId', 'name email phone memberId profileImgUrl')
+      .lean();
+
+    const payments = await Payment.find({ chitId: chit._id, status: 'approved' }).lean();
+
+    const userSlotsMap = {};
+    members.forEach(m => {
+      if (!m.userId) return;
+      const uId = m.userId._id ? m.userId._id.toString() : m.userId.toString();
+      if (!userSlotsMap[uId]) {
+        userSlotsMap[uId] = {
+          user: m.userId,
+          slotsCount: 0,
+          ticketIds: []
+        };
+      }
+      userSlotsMap[uId].slotsCount++;
+      if (m.ticketId) userSlotsMap[uId].ticketIds.push(m.ticketId);
+    });
+
+    const duesConfig = chit.monthlyDues || [];
+    const duration = chit.durationMonths || 20;
+
+    const result = Object.keys(userSlotsMap).map(uId => {
+      const item = userSlotsMap[uId];
+      const userPayments = payments.filter(p => p.userId.toString() === uId);
+
+      const monthsData = [];
+      for (let m = 1; m <= duration; m++) {
+        const config = duesConfig.find(d => d.monthNumber === m);
+        const baseDue = config ? config.dueAmount : chit.monthlyContribution;
+        const totalDue = baseDue * item.slotsCount;
+
+        const monthPayments = userPayments.filter(p => p.monthNumber === m);
+        const amountPaid = monthPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+        const remainingDue = Math.max(0, totalDue - amountPaid);
+
+        monthsData.push({
+          monthNumber: m,
+          baseDue,
+          totalDue,
+          amountPaid,
+          remainingDue,
+          isPaid: remainingDue === 0,
+          isPartial: amountPaid > 0 && remainingDue > 0,
+          payments: monthPayments.map(p => ({
+            id: p._id.toString(),
+            amount: p.amount,
+            paidDate: p.paymentDate || p.createdAt,
+            transactionId: p.transactionId,
+            proofImgUrl: p.proofImgUrl,
+            remarks: p.remarks,
+            paymentMode: p.paymentMode || 'Cash'
+          }))
+        });
+      }
+
+      return {
+        user: item.user,
+        slotsCount: item.slotsCount,
+        ticketIds: item.ticketIds,
+        months: monthsData
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        chit: {
+          id: chit._id.toString(),
+          name: chit.name,
+          chitValue: chit.chitValue,
+          durationMonths: chit.durationMonths,
+          currentMonth: chit.currentMonth,
+          monthlyContribution: chit.monthlyContribution,
+          status: chit.status,
+          monthlyDues: duesConfig
+        },
+        members: result
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching dues summary:', error);
+    res.status(500).json({ success: false, message: 'Server error fetching dues summary: ' + error.message });
+  }
+});
+
 // @route   POST /api/admin/chits/:chitId/mark-paid
-// @desc    Manually mark a user's payment for a specific month and slot as paid
+// @desc    Admin manually records or updates a member's payment with date, amount, mode, and receipt proof (reduces due)
 // @access  Private/Staff
 router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), async (req, res) => {
   try {
     const { chitId } = req.params;
-    const { userId, monthNumber, amount, transactionId, slotNumber } = req.body;
+    const {
+      paymentId,
+      userId,
+      monthNumber,
+      amount,
+      paymentDate,
+      paymentMode = 'Cash',
+      transactionId,
+      slotNumber,
+      remarks
+    } = req.body;
 
-    if (!userId || !monthNumber || !amount) {
-      return res.status(400).json({ success: false, message: 'Missing required fields (userId, monthNumber, amount)' });
+    if (!userId || !monthNumber || amount === undefined || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'Missing required fields (userId, monthNumber, amount > 0)' });
     }
 
     const targetSlotNumber = Number(slotNumber || 1);
+    const mNum = Number(monthNumber);
+    const paidAmt = Number(amount);
 
-    // Verify chit exists by _id or custom id
+    // Verify chit exists
     const chit = (mongoose.Types.ObjectId.isValid(chitId) ? await Chit.findById(chitId) : null)
       || await Chit.findOne({ id: chitId });
     if (!chit) {
-      return res.status(404).json({ success: false, message: 'Chit not found' });
+      return res.status(404).json({ success: false, message: 'Chit scheme not found.' });
     }
     
     if (req.user.role === 'employee' && chit.createdBy && chit.createdBy.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, message: 'Not authorized for this chit' });
+      return res.status(403).json({ success: false, message: 'Not authorized for this chit scheme.' });
     }
 
-    // Verify user exists by _id, custom id, or memberId
+    // Verify user exists
     const user = (mongoose.Types.ObjectId.isValid(userId) ? await User.findById(userId) : null)
       || await User.findOne({ id: userId })
       || await User.findOne({ memberId: userId });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
-    // Check if payment already exists
-    const existingPayment = await Payment.findOne({
-      userId: user._id,
-      chitId: chit._id,
-      monthNumber: Number(monthNumber),
-      slotNumber: targetSlotNumber
-    });
-
-    let proofImgUrl = 'MANUAL_ENTRY';
-    if (req.file) {
-      proofImgUrl = getFileUrl(req.file);
+    // Auto-ensure user is enrolled as an approved member in ChitMember
+    let existingMember = await ChitMember.findOne({ chitId: chit._id, userId: user._id });
+    if (!existingMember) {
+      const memberCount = await ChitMember.countDocuments({ chitId: chit._id });
+      await ChitMember.create({
+        chitId: chit._id,
+        userId: user._id,
+        slotNumber: memberCount + 1,
+        ticketId: `TICKET-${memberCount + 1}`,
+        status: 'approved'
+      });
+    } else if (existingMember.status !== 'approved') {
+      existingMember.status = 'approved';
+      await existingMember.save();
     }
 
-    if (existingPayment) {
-      if (existingPayment.status === 'approved') {
-        return res.status(400).json({ success: false, message: `Payment already recorded and approved for Month ${monthNumber} (Slot ${targetSlotNumber}).` });
+    const parsedDate = paymentDate ? new Date(paymentDate) : new Date();
+    const finalTxId = transactionId && transactionId.trim() ? transactionId.trim() : `PAY_${Date.now()}`;
+
+    let payment;
+
+    // Check if updating an existing payment
+    if (paymentId && mongoose.Types.ObjectId.isValid(paymentId)) {
+      payment = await Payment.findById(paymentId);
+      if (payment) {
+        payment.amount = paidAmt;
+        payment.paymentDate = parsedDate;
+        payment.paymentMode = paymentMode || payment.paymentMode || 'Cash';
+        payment.transactionId = finalTxId;
+        if (remarks !== undefined) payment.remarks = remarks;
+        if (req.file) {
+          payment.proofImgUrl = getFileUrl(req.file);
+          payment.proofPublicId = getPublicId(req.file);
+        }
+        payment.status = 'approved';
+        payment.verifiedAt = new Date();
+        await payment.save();
       }
-      // If it exists but is pending, rejected, or edit_requested, update and approve it
-      existingPayment.status = 'approved';
-      existingPayment.amount = Number(amount);
-      if (req.file) existingPayment.proofImgUrl = proofImgUrl;
-      if (transactionId) existingPayment.transactionId = transactionId;
-      existingPayment.verifiedAt = new Date();
-      existingPayment.remarks = existingPayment.remarks ? `${existingPayment.remarks} | Manually verified by Admin` : 'Manually marked as paid by Admin';
-      await existingPayment.save();
-      return res.json({ success: true, message: 'Payment recorded and approved successfully', data: existingPayment });
     }
 
-    // Create the manual payment record
-    const payment = await Payment.create({
-      userId: user._id,
+    // Otherwise create a new payment
+    if (!payment) {
+      let proofImgUrl = req.file ? getFileUrl(req.file) : 'MANUAL_ENTRY';
+      let proofPublicId = req.file ? getPublicId(req.file) : null;
+
+      payment = await Payment.create({
+        userId: user._id,
+        chitId: chit._id,
+        monthNumber: mNum,
+        slotNumber: targetSlotNumber,
+        amount: paidAmt,
+        paymentDate: parsedDate,
+        paymentMode: paymentMode || 'Cash',
+        transactionId: finalTxId,
+        proofImgUrl,
+        proofPublicId,
+        status: 'approved',
+        remarks: remarks || `Manually recorded by Admin (${req.user.name || 'Admin'})`,
+        recordedBy: req.user._id,
+        verifiedAt: new Date(),
+      });
+    }
+
+    // Calculate updated due breakdown for this user & month
+    const userSlots = await ChitMember.countDocuments({ chitId: chit._id, userId: user._id, status: 'approved' }) || 1;
+    const configuredDue = (chit.monthlyDues || []).find(d => d.monthNumber === mNum)?.dueAmount || chit.monthlyContribution;
+    const totalDue = configuredDue * userSlots;
+
+    const allApprovedPayments = await Payment.find({
       chitId: chit._id,
-      monthNumber: Number(monthNumber),
-      slotNumber: targetSlotNumber,
-      amount: Number(amount),
-      transactionId: transactionId || `MANUAL_${Date.now()}`,
-      proofImgUrl,
-      status: 'approved',
-      remarks: 'Manually marked as paid by Admin',
-      verifiedAt: new Date(),
+      userId: user._id,
+      monthNumber: mNum,
+      status: 'approved'
+    }).lean();
+
+    const totalPaidSoFar = allApprovedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+    const remainingDue = Math.max(0, totalDue - totalPaidSoFar);
+
+    await logAuditEvent({
+      req,
+      module: 'payments',
+      action: paymentId ? 'Update Member Payment' : 'Record Member Payment',
+      recordId: payment.id,
+      result: 'Success',
+      severity: 'Info',
+      details: `${paymentId ? 'Updated' : 'Recorded'} ₹${paidAmt} payment for ${user.name} (Chit: ${chit.name}, Month: ${mNum}). Remaining due: ₹${remainingDue}`
     });
 
-    res.json({ success: true, message: 'Payment recorded successfully', data: payment });
+    res.json({
+      success: true,
+      message: `Payment of ₹${paidAmt.toLocaleString()} saved for ${user.name} (Month ${mNum}). Remaining due: ₹${remainingDue.toLocaleString()}`,
+      data: {
+        payment,
+        dueSummary: {
+          monthNumber: mNum,
+          totalDue,
+          totalPaid: totalPaidSoFar,
+          remainingDue,
+          isFullyPaid: remainingDue === 0
+        }
+      }
+    });
   } catch (error) {
     console.error('Error marking payment as paid:', error);
     res.status(500).json({ success: false, message: 'Server error marking payment: ' + (error.message || '') });
+  }
+});
+
+// @route   DELETE /api/admin/payments/:id
+// @desc    Admin deletes a recorded payment
+// @access  Private/Staff
+router.delete('/payments/:id', protect, staff, async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ success: false, message: 'Payment record not found.' });
+    }
+
+    await Payment.findByIdAndDelete(payment._id);
+
+    await logAuditEvent({
+      req,
+      module: 'payments',
+      action: 'Delete Member Payment',
+      recordId: payment.id,
+      result: 'Success',
+      severity: 'Warning',
+      details: `Deleted payment of ₹${payment.amount} for user ID ${payment.userId} (Month ${payment.monthNumber})`
+    });
+
+    res.json({ success: true, message: 'Payment record removed successfully.' });
+  } catch (error) {
+    console.error('Error deleting payment:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting payment: ' + error.message });
   }
 });
 

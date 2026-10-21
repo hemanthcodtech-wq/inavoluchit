@@ -1,6 +1,13 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
+import ProofUploader from '../components/ProofUploader';
+import {
+  getChitMonthDate,
+  formatChitMonthYear,
+  formatChitMonthFull,
+  formatChitMonthWithNum
+} from '../utils/chitDateUtils';
 import {
   Gavel,
   Calendar,
@@ -8,7 +15,6 @@ import {
   Users,
   CheckCircle2,
   FileText,
-  Building,
   Upload,
   Eye,
   Trash2,
@@ -16,21 +22,28 @@ import {
   Clock,
   Check,
   ShieldCheck,
+  RefreshCw,
+  Building,
+  CreditCard,
+  UserCheck,
+  Search,
+  Filter,
+  Download,
+  Trophy,
   ArrowRight,
-  Lock,
+  ChevronRight,
   Layers,
   Sparkles,
-  DollarSign,
-  RefreshCw
+  ExternalLink,
+  Plus
 } from 'lucide-react';
-import { generateFixedSchemeSchedule, calculateFixedMonthlyPayment } from '../utils/auctionLogic';
 
 const AuctionManager = () => {
-  const { user, token, API_URL } = useAuth();
+  const { user, token, API_URL, SERVER_URL } = useAuth();
   const isStaffOrAdmin = user && (user.role === 'superadmin' || user.role === 'employee');
 
-  // Auction Type State: 'bid' (Written Bid) or 'fixed' (Fixed Amount)
-  const [auctionType, setAuctionType] = useState('bid');
+  // Navigation Tab State ('conduct' or 'history')
+  const [activeTab, setActiveTab] = useState('conduct');
 
   // Data State
   const [chits, setChits] = useState([]);
@@ -44,24 +57,23 @@ const AuctionManager = () => {
   const [auctionMonth, setAuctionMonth] = useState('1');
   const [auctionDate, setAuctionDate] = useState(() => {
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    return today.toISOString().split('T')[0];
   });
-  const [winnerPayout, setWinnerPayout] = useState('');
-  const [winningDiscount, setWinningDiscount] = useState('');
+  const [participatingUserIds, setParticipatingUserIds] = useState([]);
   const [winningMemberId, setWinningMemberId] = useState('');
-  const [auctionNotes, setAuctionNotes] = useState('');
-
-  // Payment Details Sub-form
-  const [payoutMethod, setPayoutMethod] = useState('Cash');
+  const [auctionAmount, setAuctionAmount] = useState('');
+  const [payoutMethod, setPayoutMethod] = useState('Bank Transfer (NEFT / RTGS / IMPS)');
   const [beneficiaryBank, setBeneficiaryBank] = useState('');
   const [bankUtr, setBankUtr] = useState('');
+  const [auctionNotes, setAuctionNotes] = useState('');
   const [receiptFile, setReceiptFile] = useState(null);
 
-  // Receipt Modal
-  const [previewReceiptUrl, setPreviewReceiptUrl] = useState(null);
+  // Search & Filters for History
+  const [filterChitId, setFilterChitId] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Proof Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   // Fetch chits and auctions
   const fetchData = async () => {
@@ -93,334 +105,139 @@ const AuctionManager = () => {
   }, [token, API_URL]);
 
   // Selected Chit Object
-  const selectedChit = chits.find(c => c.id === selectedChitId);
+  const selectedChit = useMemo(() => {
+    return chits.find((c) => (c.id || c._id) === selectedChitId);
+  }, [chits, selectedChitId]);
 
-  // Fixed Scheme Schedule (Calculated dynamically for selected chit)
-  const fixedScheduleData = useMemo(() => {
-    if (!selectedChit) return null;
-    
-    // Combine manual freezes and recorded auctions for this chit
-    const bookedFreezes = (selectedChit.freezes || []).concat(
-      auctions
-        .filter(a => a.chitId === selectedChit.id)
-        .map(a => ({
-          monthNumber: a.monthNumber,
-          userId: a.winningMemberId,
-          user: a.winningMember,
-          ticketId: a.winningTicket
-        }))
-    );
+  // Approved enrolled members for selected chit
+  const enrolledMembers = useMemo(() => {
+    if (!selectedChit) return [];
+    const raw = (selectedChit.members || []).filter((m) => m.status === 'approved');
 
-    return generateFixedSchemeSchedule({
-      chitValue: selectedChit.chitValue,
-      durationMonths: selectedChit.durationMonths,
-      monthlyPaymentFixed: selectedChit.monthlyContribution,
-      bookedFreezes
-    });
-  }, [selectedChit, auctions]);
-
-  // Handle Auction Type Switch
-  const handleAuctionTypeChange = (type) => {
-    setAuctionType(type);
-    setMessage({ text: '', type: '' });
-    if (type === 'fixed' && selectedChit && fixedScheduleData) {
-      const targetMonthNum = Number(auctionMonth) || 1;
-      const slot = fixedScheduleData.schedule.find(s => s.month === targetMonthNum) || fixedScheduleData.schedule[0];
-      if (slot) {
-        setWinnerPayout(String(slot.winnerAmount));
-        setWinningDiscount(String(slot.discountAmount));
+    // Group by user id to prevent duplicate users in participation list
+    const userMap = {};
+    raw.forEach((m) => {
+      const u = m.user || {};
+      const uId = u.id || u._id || m.userId;
+      if (!uId) return;
+      if (!userMap[uId]) {
+        userMap[uId] = {
+          id: uId,
+          name: u.name || 'Member',
+          email: u.email || '',
+          phone: u.phone || '',
+          memberId: u.memberId || '',
+          profileImgUrl: u.profileImgUrl || '',
+          tickets: [],
+          slotCount: 0
+        };
       }
-    }
-  };
+      userMap[uId].slotCount++;
+      if (m.ticketId) userMap[uId].tickets.push(m.ticketId);
+    });
 
-  // When selected chit changes, auto-suggest next auction month & prefill values
-  // When selected chit changes, auto-detect auction type and suggest next auction month & prefill values
+    return Object.values(userMap);
+  }, [selectedChit]);
+
+  // Handle Chit Change
   const handleChitChange = (chitId) => {
     setSelectedChitId(chitId);
     setWinningMemberId('');
-    if (chitId) {
-      const chit = chits.find(c => c.id === chitId);
-      if (chit) {
-        // Auto-detect auction type from chit scheme configuration (termsAndConditions)
-        const tc = (chit.termsAndConditions || '').toLowerCase();
-        const detectedType = tc.includes('written bid') ? 'bid' : 'fixed';
-        setAuctionType(detectedType);
+    setParticipatingUserIds([]);
+    setAuctionAmount('');
+    setMessage({ text: '', type: '' });
 
-        const chitAuctions = auctions.filter(a => a.chitId === chitId);
-        const nextMonth = chitAuctions.length > 0
-          ? Math.max(...chitAuctions.map(a => a.monthNumber)) + 1
-          : (chit.currentMonth || 1);
-        const mStr = String(Math.min(nextMonth, chit.durationMonths));
+    if (chitId) {
+      const chit = chits.find((c) => (c.id || c._id) === chitId);
+      if (chit) {
+        const chitAuctions = auctions.filter((a) => (a.chitId?.id || a.chitId?._id || a.chitId) === chitId);
+        const nextMonth =
+          chitAuctions.length > 0
+            ? Math.max(...chitAuctions.map((a) => a.monthNumber)) + 1
+            : (chit.currentMonth || 1);
+        const mStr = String(Math.min(nextMonth, chit.durationMonths || 20));
         setAuctionMonth(mStr);
 
-        if (detectedType === 'fixed') {
-          const schedule = generateFixedSchemeSchedule({
-            chitValue: chit.chitValue,
-            durationMonths: chit.durationMonths,
-            monthlyPaymentFixed: chit.monthlyContribution
-          });
-          const slot = schedule.schedule.find(s => s.month === Number(mStr)) || schedule.schedule[0];
-          if (slot) {
-            setWinnerPayout(String(slot.winnerAmount));
-            setWinningDiscount(String(slot.discountAmount));
-          }
-        } else {
-          setWinnerPayout('');
-          setWinningDiscount('');
+        // Pre-select all enrolled members as participating by default
+        const rawMembers = (chit.members || []).filter((m) => m.status === 'approved');
+        const ids = [...new Set(rawMembers.map((m) => m.user?.id || m.user?._id || m.userId).filter(Boolean))];
+        setParticipatingUserIds(ids);
+      }
+    }
+  };
+
+  // Toggle Participating User
+  const toggleParticipatingUser = (userId) => {
+    setParticipatingUserIds((prev) => {
+      if (prev.includes(userId)) {
+        const next = prev.filter((id) => id !== userId);
+        if (winningMemberId === userId) {
+          setWinningMemberId('');
         }
+        return next;
+      } else {
+        return [...prev, userId];
       }
-    }
+    });
   };
 
-  // When month changes in Fixed Mode, auto-update the winner amount
-  const handleMonthChange = (mStr) => {
-    setAuctionMonth(mStr);
-    if (auctionType === 'fixed' && selectedChit) {
-      const mNum = Number(mStr);
-      const schedule = generateFixedSchemeSchedule({
-        chitValue: selectedChit.chitValue,
-        durationMonths: selectedChit.durationMonths,
-        monthlyPaymentFixed: selectedChit.monthlyContribution
-      });
-      const slot = schedule.schedule.find(s => s.month === mNum);
-      if (slot) {
-        setWinnerPayout(String(slot.winnerAmount));
-        setWinningDiscount(String(slot.discountAmount));
-      }
-    }
+  // Select all / clear participating users
+  const handleSelectAllParticipants = () => {
+    const allIds = enrolledMembers.map((m) => m.id);
+    setParticipatingUserIds(allIds);
   };
 
-  // Select slot directly from Fixed Schedule Table
-  const handleSelectFixedSlot = (slot) => {
-    setAuctionMonth(String(slot.month));
-    setWinnerPayout(String(slot.winnerAmount));
-    setWinningDiscount(String(slot.discountAmount));
+  const handleClearParticipants = () => {
+    setParticipatingUserIds([]);
+    setWinningMemberId('');
   };
 
-  // Handle Winner Payout input change (Written Bid Mode)
-  const handleWinnerPayoutChange = (val) => {
-    setWinnerPayout(val);
-    if (selectedChit) {
-      const chitVal = Number(selectedChit.chitValue) || 0;
-      const numVal = Number(val);
-      if (val !== '' && !isNaN(numVal) && numVal <= chitVal) {
-        setWinningDiscount(String(chitVal - numVal));
-      } else if (val === '') {
-        setWinningDiscount('');
-      }
-    }
-  };
+  // Summary Metrics
+  const totalAuctionsCount = auctions.length;
+  const totalPrizeDistributed = useMemo(() => {
+    return auctions.reduce((sum, a) => sum + Number(a.auctionAmount || a.winnerPayout || 0), 0);
+  }, [auctions]);
+  const activeChitsCount = useMemo(() => {
+    return chits.filter((c) => c.status === 'active').length;
+  }, [chits]);
+  const latestAuction = auctions[0] || null;
 
-  // Handle Discount input change (Written Bid Mode)
-  const handleDiscountChange = (val) => {
-    setWinningDiscount(val);
-    if (selectedChit) {
-      const chitVal = Number(selectedChit.chitValue) || 0;
-      const numVal = Number(val);
-      if (val !== '' && !isNaN(numVal) && numVal <= chitVal) {
-        setWinnerPayout(String(chitVal - numVal));
-      } else if (val === '') {
-        setWinnerPayout('');
-      }
-    }
-  };
-
-  // Handle Winning Member change
-  const handleWinningMemberChange = (val) => {
-    setWinningMemberId(val);
-    if (payoutMethod === 'Cheque' && !beneficiaryBank && selectedChit) {
-      const member = (selectedChit.members || []).find(m => m.id === val || m.userId === val);
-      if (member && member.user?.name) {
-        setBeneficiaryBank(member.user.name);
-      }
-    }
-  };
-
-  // Handle Payout Method change
-  const handlePayoutMethodChange = (method) => {
-    setPayoutMethod(method);
-    setMessage({ text: '', type: '' });
-    if (method === 'Cash') {
-      setBeneficiaryBank('');
-      setBankUtr('');
-      setReceiptFile(null);
-    } else if (method === 'Cheque' && !beneficiaryBank && winningMemberId && selectedChit) {
-      const member = (selectedChit.members || []).find(m => m.id === winningMemberId || m.userId === winningMemberId);
-      if (member && member.user?.name) {
-        setBeneficiaryBank(member.user.name);
-      }
-    }
-  };
-
-  // Approved members in the selected chit
-  const approvedMembers = selectedChit
-    ? (selectedChit.members || [])
-        .filter(m => m.status === 'approved')
-        .sort((a, b) => {
-          const numA = parseInt(String(a.ticketId || '').match(/\d+/)?.[0] || a.slotNumber || 0, 10);
-          const numB = parseInt(String(b.ticketId || '').match(/\d+/)?.[0] || b.slotNumber || 0, 10);
-          return numA - numB;
-        })
-    : [];
-
-  // Real-time server financial calculations
-  const calcResults = (() => {
-    if (!selectedChit || winningDiscount === '' || Number(winningDiscount) < 0) {
-      return null;
-    }
-
-    const chitValue = Number(selectedChit.chitValue) || 0;
-    const duration = Number(selectedChit.durationMonths) || 1;
-    const totalMembers = Number(selectedChit.totalMembers) || duration;
-    const discount = Number(winningDiscount) || 0;
-    const nominalMonthly = Number(selectedChit.monthlyContribution) || Math.round(chitValue / duration);
-    const totalMonths = Number(selectedChit.durationMonths || selectedChit.totalMonths || 12);
-    const isFinalMonth = Number(auctionMonth) >= totalMonths;
-
-    if (auctionType === 'fixed') {
-      const schedule = fixedScheduleData || generateFixedSchemeSchedule({
-        chitValue,
-        durationMonths: duration,
-        monthlyPaymentFixed: selectedChit.monthlyContribution
-      });
-      const currentSlot = schedule.schedule.find(s => s.month === Number(auctionMonth)) || schedule.schedule[0];
-      const fixedMonthly = Number(selectedChit.monthlyContribution) || schedule.monthlyPaymentFixed;
-      const manuallyEnteredPayout = winnerPayout !== '' ? Number(winnerPayout) : (chitValue - discount);
-      const winnerAmount = !isNaN(manuallyEnteredPayout) && manuallyEnteredPayout > 0
-        ? manuallyEnteredPayout
-        : (currentSlot ? currentSlot.winnerAmount : (chitValue - discount));
-      const totalMemberContribution = fixedMonthly * duration;
-      const totalBenefit = chitValue - totalMemberContribution;
-
-      return {
-        isFixed: true,
-        chitValue,
-        duration,
-        totalMembers,
-        monthNumber: Number(auctionMonth),
-        fixedMonthly,
-        winnerPayout: winnerAmount,
-        discount: chitValue - winnerAmount,
-        discountPercent: (((chitValue - winnerAmount) / chitValue) * 100).toFixed(1),
-        totalMemberContribution,
-        totalBenefit,
-        nextPayableAmount: isFinalMonth ? 0 : fixedMonthly
-      };
-    } else {
-      // Written Bid Auction Calculations
-      let commissionPercent = 5;
-      if (selectedChit.termsAndConditions && selectedChit.termsAndConditions.includes('Foreman Commission:')) {
-        const match = selectedChit.termsAndConditions.match(/Foreman Commission:\s*(\d+)%/i);
-        if (match && match[1]) {
-          commissionPercent = Number(match[1]);
-        }
-      }
-
-      const foremanCommission = Math.round(chitValue * (commissionPercent / 100));
-      const winnerPayoutAmount = chitValue - discount;
-      const distributablePool = Math.max(0, discount - foremanCommission);
-      const dividendPerMember = Math.round(distributablePool / totalMembers);
-      const nextPayableAmount = isFinalMonth ? 0 : Math.max(0, nominalMonthly - dividendPerMember);
-      const discountPercent = ((discount / chitValue) * 100).toFixed(1);
-
-      return {
-        isFixed: false,
-        chitValue,
-        duration,
-        totalMembers,
-        discount,
-        discountPercent,
-        commissionPercent,
-        foremanCommission,
-        distributablePool,
-        dividendPerMember,
-        winnerPayout: winnerPayoutAmount,
-        nominalMonthly,
-        nextPayableAmount
-      };
-    }
-  })();
-
+  // Submit Auction Record
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
 
     if (!selectedChitId) {
-      setMessage({ text: 'Please select an active chit scheme.', type: 'error' });
-      return;
+      return setMessage({ text: 'Please select a chit scheme.', type: 'error' });
+    }
+    if (!auctionMonth || Number(auctionMonth) <= 0) {
+      return setMessage({ text: 'Please select a valid auction month.', type: 'error' });
     }
     if (!winningMemberId) {
-      setMessage({ text: 'Please select a winning member.', type: 'error' });
-      return;
+      return setMessage({ text: 'Please select which user is awarded the auctioned chit payout.', type: 'error' });
     }
-    if (winningDiscount === '' || Number(winningDiscount) < 0) {
-      setMessage({ text: 'Please enter a valid winning payout or discount amount.', type: 'error' });
-      return;
-    }
-
-    // Payout Method specific validation
-    if (payoutMethod === 'UPI') {
-      if (!bankUtr || !bankUtr.trim()) {
-        setMessage({ text: 'Please enter the UPI Transaction ID / Reference Number.', type: 'error' });
-        return;
-      }
-      if (!receiptFile) {
-        setMessage({ text: 'Please upload the UPI payment screenshot.', type: 'error' });
-        return;
-      }
-    } else if (payoutMethod === 'Cheque') {
-      if (!beneficiaryBank || !beneficiaryBank.trim()) {
-        setMessage({ text: 'Please enter the Beneficiary / Payee Name for the cheque.', type: 'error' });
-        return;
-      }
-      if (!bankUtr || !bankUtr.trim()) {
-        setMessage({ text: 'Please enter the Cheque Number.', type: 'error' });
-        return;
-      }
-    } else if (payoutMethod === 'Bank Transfer (NEFT / RTGS / IMPS)') {
-      if (!beneficiaryBank || !beneficiaryBank.trim()) {
-        setMessage({ text: 'Please enter the Beneficiary Bank Name.', type: 'error' });
-        return;
-      }
-      if (!bankUtr || !bankUtr.trim()) {
-        setMessage({ text: 'Please enter the Bank UTR / Reference Number.', type: 'error' });
-        return;
-      }
-      if (!receiptFile) {
-        setMessage({ text: 'Please upload the Bank Transfer payment proof / receipt screenshot.', type: 'error' });
-        return;
-      }
+    if (!auctionAmount || Number(auctionAmount) <= 0) {
+      return setMessage({ text: 'Please enter how much amount was auctioned (prize payout).', type: 'error' });
     }
 
     setSubmitting(true);
+
     try {
       const formData = new FormData();
       formData.append('chitId', selectedChitId);
       formData.append('monthNumber', auctionMonth);
       formData.append('auctionDate', auctionDate);
-      formData.append('winningBidDiscount', winningDiscount);
-      formData.append('auctionNotes', auctionNotes || (auctionType === 'fixed' ? 'Fixed Amount Scheme Winner Claim' : ''));
+      formData.append('auctionAmount', auctionAmount);
+      formData.append('winnerPayout', auctionAmount);
+      formData.append('winningMemberId', winningMemberId);
+      formData.append('participatingUserIds', JSON.stringify(participatingUserIds));
       formData.append('payoutMethod', payoutMethod);
-      if (payoutMethod !== 'Cash') {
-        formData.append('beneficiaryBankName', beneficiaryBank || '');
-        formData.append('bankUtr', bankUtr || '');
-      }
-      if (payoutMethod !== 'Cash' && receiptFile) {
-        formData.append('receipt', receiptFile);
-      }
+      if (beneficiaryBank.trim()) formData.append('beneficiaryBankName', beneficiaryBank.trim());
+      if (bankUtr.trim()) formData.append('bankUtr', bankUtr.trim());
+      if (auctionNotes.trim()) formData.append('auctionNotes', auctionNotes.trim());
+      if (receiptFile) formData.append('receipt', receiptFile);
 
-      // Selected member
-      const selectedMember = approvedMembers.find(m => m.id === winningMemberId || m.userId === winningMemberId);
-      if (selectedMember) {
-        formData.append('winningMemberId', selectedMember.userId || selectedMember.user?.id);
-        formData.append('winningChitMemberId', selectedMember.id);
-        const rawWinning = selectedMember.ticketId || `MEMBER-${selectedMember.slotNumber || 1}`;
-        formData.append('winningTicket', rawWinning.replace(/^TICKET-/, 'MEMBER-'));
-      } else {
-        formData.append('winningMemberId', winningMemberId);
-      }
-
-      const response = await fetch(`${API_URL}/auctions`, {
+      const res = await fetch(`${API_URL}/auctions`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`
@@ -428,1218 +245,2000 @@ const AuctionManager = () => {
         body: formData
       });
 
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        setMessage({ text: data.message || 'Auction result recorded successfully!', type: 'success' });
-        // Reset inputs
-        setWinnerPayout('');
-        setWinningDiscount('');
+        setMessage({
+          text: `Auction for Month ${auctionMonth} recorded successfully! Prize payout of ₹${Number(auctionAmount).toLocaleString()} saved.`,
+          type: 'success'
+        });
+
+        // Reset form inputs
         setWinningMemberId('');
-        setAuctionNotes('');
-        setBeneficiaryBank('');
+        setAuctionAmount('');
         setBankUtr('');
+        setBeneficiaryBank('');
+        setAuctionNotes('');
         setReceiptFile(null);
+
+        // Refresh data
         await fetchData();
+
+        // Switch to history tab so user sees the newly created record
+        setTimeout(() => {
+          setActiveTab('history');
+        }, 800);
       } else {
         setMessage({ text: data.message || 'Failed to record auction.', type: 'error' });
       }
     } catch (err) {
-      console.error('Error saving auction:', err);
-      setMessage({ text: 'Server error recording auction result.', type: 'error' });
+      console.error('Error recording auction:', err);
+      setMessage({ text: 'Connection error recording auction.', type: 'error' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDeleteAuction = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this auction record?')) return;
+  // Delete Auction Record
+  const handleDeleteAuction = async (auctionId, mNum) => {
+    if (!window.confirm(`Are you sure you want to delete the auction record for Month ${mNum}?`)) {
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/auctions/${id}`, {
+      const res = await fetch(`${API_URL}/auctions/${auctionId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        setMessage({ text: 'Auction record deleted successfully.', type: 'success' });
-        await fetchData();
+        setMessage({ text: `Auction for Month ${mNum} deleted.`, type: 'success' });
+        fetchData();
       } else {
-        setMessage({ text: data.message || 'Failed to delete auction record.', type: 'error' });
+        setMessage({ text: data.message || 'Failed to delete auction.', type: 'error' });
       }
     } catch (err) {
       console.error('Error deleting auction:', err);
-      setMessage({ text: 'Error connecting to server.', type: 'error' });
+      setMessage({ text: 'Error deleting auction record.', type: 'error' });
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ padding: '3rem', textAlign: 'center', color: '#2563eb', fontWeight: 600 }}>
-        Loading auction management portal...
-      </div>
-    );
-  }
+  const getFullImgUrl = (path) => {
+    if (!path) return '';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    const base =
+      SERVER_URL ||
+      (typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:5000'
+        : import.meta.env.VITE_SERVER_URL || 'http://localhost:5000');
+    return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  // Filtered recorded auctions
+  const filteredAuctions = useMemo(() => {
+    return auctions.filter((a) => {
+      const cId = a.chitId?._id || a.chitId?.id || a.chitId;
+      if (filterChitId !== 'all' && cId !== filterChitId) return false;
+
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      const chitName = (a.chit?.name || a.chitId?.name || '').toLowerCase();
+      const winnerName = (a.winningMember?.name || '').toLowerCase();
+      const winnerId = (a.winningMember?.memberId || '').toLowerCase();
+      const utr = (a.bankUtr || '').toLowerCase();
+      return chitName.includes(q) || winnerName.includes(q) || winnerId.includes(q) || utr.includes(q);
+    });
+  }, [auctions, filterChitId, searchQuery]);
 
   return (
-    <div className="admin-page-container" style={{ width: '100%', maxWidth: '1380px', margin: '0 auto', paddingBottom: '3rem', boxSizing: 'border-box' }}>
-      
-      {/* 1. Header Banner */}
+    <div className="auction-page-container">
       <ScrollAnimationWrapper>
-        <div style={{
-          backgroundColor: '#ffffff',
-          borderRadius: '0.85rem',
-          border: '1px solid #e2e8f0',
-          padding: '1.25rem 1.75rem',
-          marginBottom: '1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '1rem',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            width: '100%',
-            flexWrap: 'wrap',
-            gap: '1rem'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div style={{
-                backgroundColor: '#eff6ff',
-                color: '#2563eb',
-                borderRadius: '0.6rem',
-                padding: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Gavel size={26} />
-              </div>
-              <div>
-                <h1 style={{
-                  fontSize: '1.4rem',
-                  fontWeight: 800,
-                  color: '#0f172a',
-                  margin: '0 0 0.25rem 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem'
-                }}>
-                  Conduct Monthly Auction
-                </h1>
-                <p style={{ fontSize: '0.88rem', color: '#64748b', margin: 0 }}>
-                  Select a chit scheme to record its monthly auction. The scheme's configured auction type (<strong>Fixed Amount</strong> or <strong>Written Bid</strong>) loads automatically.
-                </p>
-              </div>
+        {/* Top Header Banner */}
+        <div className="auction-header-banner">
+          <div className="auction-header-text">
+            <div className="auction-badge">
+              <Gavel size={14} />
+              <span>Chit Auction Portal</span>
             </div>
+            <h1 className="auction-title">
+              Monthly <span className="highlight-text">Auction Management</span>
+            </h1>
+            <p className="auction-subtitle">
+              Conduct live monthly auctions, select bidders, award payouts, and manage verified payment proofs.
+            </p>
+          </div>
 
+          <div className="auction-header-actions">
             <button
+              type="button"
               onClick={fetchData}
               disabled={loading}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                padding: '0.55rem 1.1rem',
-                borderRadius: '0.6rem',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#1e293b',
-                fontSize: '0.88rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-              }}
+              className="refresh-btn"
+              title="Refresh Records"
             >
-              <RefreshCw size={15} className={loading ? "spin" : ""} color="#475569" />
+              <RefreshCw size={16} className={loading ? 'spin' : ''} />
               <span>Refresh</span>
             </button>
           </div>
         </div>
       </ScrollAnimationWrapper>
 
-      {/* Global Status Message */}
+      {/* Summary Stat Cards */}
+      <div className="auction-stats-grid">
+        <div className="auction-stat-card">
+          <div className="stat-card-icon" style={{ backgroundColor: '#eff6ff', color: '#2563eb' }}>
+            <Gavel size={22} />
+          </div>
+          <div>
+            <span className="stat-card-label">Auctions Recorded</span>
+            <div className="stat-card-value">{totalAuctionsCount}</div>
+            <span className="stat-card-sub">Completed bidding sessions</span>
+          </div>
+        </div>
+
+        <div className="auction-stat-card">
+          <div className="stat-card-icon" style={{ backgroundColor: '#ecfdf5', color: '#059669' }}>
+            <IndianRupee size={22} />
+          </div>
+          <div>
+            <span className="stat-card-label">Total Prize Disbursed</span>
+            <div className="stat-card-value" style={{ color: '#059669' }}>
+              ₹{totalPrizeDistributed.toLocaleString()}
+            </div>
+            <span className="stat-card-sub">Net payout to winners</span>
+          </div>
+        </div>
+
+        <div className="auction-stat-card">
+          <div className="stat-card-icon" style={{ backgroundColor: '#fef3c7', color: '#d97706' }}>
+            <Building size={22} />
+          </div>
+          <div>
+            <span className="stat-card-label">Active Schemes</span>
+            <div className="stat-card-value">{activeChitsCount}</div>
+            <span className="stat-card-sub">Chit schemes currently active</span>
+          </div>
+        </div>
+
+        <div className="auction-stat-card">
+          <div className="stat-card-icon" style={{ backgroundColor: '#f5f3ff', color: '#7c3aed' }}>
+            <Trophy size={22} />
+          </div>
+          <div>
+            <span className="stat-card-label">Latest Winner</span>
+            <div className="stat-card-value" style={{ fontSize: '1.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {latestAuction?.winningMember?.name || 'None Recorded'}
+            </div>
+            <span className="stat-card-sub">
+              {latestAuction ? `${formatChitMonthYear(latestAuction.chit, latestAuction.monthNumber)} (M${latestAuction.monthNumber}) • ₹${Number(latestAuction.auctionAmount || latestAuction.winnerPayout || 0).toLocaleString()}` : 'Awaiting first auction'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Alert Messages */}
       {message.text && (
-        <div style={{
-          padding: '0.85rem 1.25rem',
-          borderRadius: '0.6rem',
-          marginBottom: '1.25rem',
-          fontSize: '0.9rem',
-          fontWeight: 600,
-          backgroundColor: message.type === 'success' ? '#eff6ff' : '#fef2f2',
-          border: `1px solid ${message.type === 'success' ? '#a5b4fc' : '#fca5a5'}`,
-          color: message.type === 'success' ? '#2563eb' : '#b91c1c',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-          {message.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+        <div className={`auction-alert-box ${message.type === 'error' ? 'alert-error' : 'alert-success'}`}>
+          {message.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
           <span>{message.text}</span>
+          <button type="button" onClick={() => setMessage({ text: '', type: '' })} className="alert-close-btn">
+            ✕
+          </button>
         </div>
       )}
 
-      {/* 2. Main 2-Column Section (Form + Server Financial Preview) */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isStaffOrAdmin ? '1.55fr 1fr' : '1fr',
-        gap: '1.75rem',
-        marginBottom: '2.5rem'
-      }} className="auction-grid-container">
+      {/* Responsive View Tabs */}
+      <div className="auction-nav-tabs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('conduct')}
+          className={`tab-btn ${activeTab === 'conduct' ? 'active' : ''}`}
+        >
+          <Gavel size={17} />
+          <span>Conduct Auction</span>
+        </button>
 
-        {/* Left Column: Form */}
-        {isStaffOrAdmin ? (
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '0.85rem',
-            border: '1px solid #e2e8f0',
-            padding: '1.75rem',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-          }}>
-            {/* Form Section Header */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.6rem',
-              marginBottom: '1.5rem',
-              paddingBottom: '0.75rem',
-              borderBottom: '1px solid #f1f5f9'
-            }}>
-              {auctionType === 'fixed' ? <ShieldCheck size={18} color="#2563eb" /> : <Gavel size={18} color="#2563eb" />}
-              <h2 style={{
-                fontSize: '0.92rem',
-                fontWeight: 800,
-                color: '#1e293b',
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                margin: 0
-              }}>
-                {auctionType === 'fixed' ? '1. FIXED SCHEME PARAMETERS & WINNER RECORD' : '1. REVERSE BID AUCTION PARAMETERS & WINNER SELECTION'}
-              </h2>
+        <button
+          type="button"
+          onClick={() => setActiveTab('history')}
+          className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+        >
+          <Building size={17} />
+          <span>Auction History</span>
+          <span className="tab-count-badge">{filteredAuctions.length}</span>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* TAB 1: CONDUCT AUCTION FORM                                               */}
+      {/* ========================================================================= */}
+      {activeTab === 'conduct' && (
+        <ScrollAnimationWrapper>
+          <div className="conduct-auction-card">
+            <div className="conduct-card-header">
+              <div className="conduct-header-icon">
+                <Gavel size={22} />
+              </div>
+              <div>
+                <h2 className="conduct-header-title">Conduct Monthly Auction</h2>
+                <p className="conduct-header-desc">
+                  Select chit scheme, mark participating bidders, pick the winning member, and save receipt proof.
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Row 1: Chit Scheme * & Auction Month # * */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '1.25rem' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
-                    Chit Scheme *
-                  </label>
-                  <select
-                    required
-                    value={selectedChitId}
-                    onChange={(e) => handleChitChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.9rem',
-                      color: '#0f172a',
-                      backgroundColor: '#ffffff',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="">-- Select Active Scheme --</option>
-                    {chits.map(chit => (
-                      <option key={chit.id} value={chit.id}>
-                        {chit.name} (₹{chit.chitValue.toLocaleString()} · {chit.durationMonths}M)
-                      </option>
-                    ))}
-                  </select>
-                  {selectedChit && (
-                    <div style={{ marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <span style={{
-                        fontSize: '0.74rem',
-                        fontWeight: 700,
-                        padding: '0.18rem 0.6rem',
-                        borderRadius: '9999px',
-                        backgroundColor: auctionType === 'fixed' ? '#dbeafe' : '#eff6ff',
-                        color: auctionType === 'fixed' ? '#2563eb' : '#1d4ed8',
-                        border: `1px solid ${auctionType === 'fixed' ? '#a5b4fc' : '#bfdbfe'}`,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem'
-                      }}>
-                        {auctionType === 'fixed' ? '🛡️ Configured as Fixed Amount Scheme' : '🔨 Configured as Written Bid Scheme'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
-                    Auction Month # *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max={selectedChit ? selectedChit.durationMonths : 100}
-                    value={auctionMonth}
-                    onChange={(e) => handleMonthChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem 0.85rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.9rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Auction Date * & Bid Inputs */}
-              {auctionType === 'fixed' ? (
-                /* Fixed Auction Mode Inputs */
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
-                      Auction Date *
+            <form onSubmit={handleSubmit} className="conduct-form">
+              <div className="conduct-form-grid">
+                
+                {/* LEFT COLUMN: Scheme, Month & Bidders */}
+                <div className="form-col">
+                  {/* Step 1: Select Chit */}
+                  <div className="form-group">
+                    <label className="form-label">
+                      1. Select Chit Scheme <span className="req-star">*</span>
                     </label>
-                    <input
-                      type="date"
+                    <select
+                      value={selectedChitId}
+                      onChange={(e) => handleChitChange(e.target.value)}
                       required
-                      value={auctionDate}
-                      onChange={(e) => setAuctionDate(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.88rem',
-                        color: '#0f172a',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
+                      className="form-input form-select"
+                    >
+                      <option value="">-- Choose Active Chit Scheme --</option>
+                      {chits.map((c) => (
+                        <option key={c.id || c._id} value={c.id || c._id}>
+                          {c.name} — ₹{Number(c.chitValue).toLocaleString()} ({c.durationMonths} Mos) [{c.status}]
+                        </option>
+                      ))}
+                    </select>
+                    {selectedChit && (
+                      <div className="selected-chit-badge-row">
+                        <span className="chit-info-chip">
+                          Pool: <strong>₹{Number(selectedChit.chitValue).toLocaleString()}</strong>
+                        </span>
+                        <span className="chit-info-chip">
+                          Duration: <strong>{selectedChit.durationMonths} Mos</strong>
+                        </span>
+                        <span className="chit-info-chip">
+                          Enrolled: <strong>{enrolledMembers.length} Members</strong>
+                        </span>
+                      </div>
+                    )}
                   </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                      Fixed Winner Amount (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={winnerPayout}
-                      onChange={(e) => handleWinnerPayoutChange(e.target.value)}
-                      placeholder="e.g. 210000"
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1.5px solid #2563eb',
-                        backgroundColor: '#ffffff',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        color: '#1d4ed8',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#1d4ed8';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(22, 163, 74, 0.15)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#2563eb';
-                        e.target.style.boxShadow = 'none';
-                      }}
-                    />
-                    <span style={{ fontSize: '0.7rem', color: '#2563eb', display: 'block', marginTop: '0.2rem' }}>
-                      Enter winner take-home manually
+                  {/* Step 2: Month & Date */}
+                  <div className="form-row-2col">
+                    <div className="form-group">
+                      <label className="form-label">
+                        2. Auction Month & Year <span className="req-star">*</span>
+                      </label>
+                      <select
+                        value={auctionMonth}
+                        onChange={(e) => {
+                          const mVal = e.target.value;
+                          setAuctionMonth(mVal);
+                          if (selectedChit) {
+                            const d = getChitMonthDate(selectedChit, mVal);
+                            if (d) {
+                              const yr = d.getFullYear();
+                              const mo = String(d.getMonth() + 1).padStart(2, '0');
+                              const day = String(new Date().getDate()).padStart(2, '0');
+                              setAuctionDate(`${yr}-${mo}-${day}`);
+                            }
+                          }
+                        }}
+                        required
+                        className="form-input form-select"
+                      >
+                        {Array.from({ length: selectedChit?.durationMonths || 20 }, (_, i) => i + 1).map((m) => (
+                          <option key={m} value={m}>
+                            {formatChitMonthWithNum(selectedChit, m)}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedChit && (
+                        <span className="form-hint" style={{ color: '#1e40af', fontWeight: 600 }}>
+                          📅 Target Period: {formatChitMonthFull(selectedChit, auctionMonth)}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">
+                        Auction Date <span className="req-star">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={auctionDate}
+                        onChange={(e) => setAuctionDate(e.target.value)}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 3: Participating Bidders Selection */}
+                  <div className="form-group">
+                    <div className="bidders-header">
+                      <label className="form-label" style={{ marginBottom: 0 }}>
+                        3. Participating Bidders ({participatingUserIds.length}/{enrolledMembers.length})
+                      </label>
+                      <div className="bidders-quick-actions">
+                        <button
+                          type="button"
+                          onClick={handleSelectAllParticipants}
+                          disabled={enrolledMembers.length === 0}
+                          className="link-btn"
+                        >
+                          Select All
+                        </button>
+                        <span className="dot-sep">•</span>
+                        <button
+                          type="button"
+                          onClick={handleClearParticipants}
+                          disabled={participatingUserIds.length === 0}
+                          className="link-btn link-btn-secondary"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    {enrolledMembers.length === 0 ? (
+                      <div className="bidders-empty-box">
+                        {selectedChitId
+                          ? 'No approved members enrolled in this chit scheme yet.'
+                          : 'Select a chit scheme first to view enrolled members.'}
+                      </div>
+                    ) : (
+                      <div className="bidders-list-box">
+                        {enrolledMembers.map((m) => {
+                          const isSelected = participatingUserIds.includes(m.id);
+                          return (
+                            <div
+                              key={m.id}
+                              onClick={() => toggleParticipatingUser(m.id)}
+                              className={`bidder-item ${isSelected ? 'selected' : ''}`}
+                            >
+                              <div className="bidder-item-left">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} // handled by parent div
+                                  className="bidder-checkbox"
+                                />
+                                <div>
+                                  <div className="bidder-name">{m.name}</div>
+                                  <div className="bidder-meta">
+                                    {m.memberId ? `ID: ${m.memberId}` : ''} {m.phone ? `• ${m.phone}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className="bidder-slot-badge">
+                                {m.slotCount} {m.slotCount === 1 ? 'Slot' : 'Slots'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <span className="form-hint">
+                      Check members who attended or placed bids in this session.
                     </span>
                   </div>
+                </div>
 
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
-                      Fixed Monthly Installment (₹)
+                {/* RIGHT COLUMN: Winner, Payout & Receipt */}
+                <div className="form-col">
+                  {/* Step 4: Given To Which User */}
+                  <div className="form-group">
+                    <label className="form-label">
+                      4. Awarded Winning Member <span className="req-star">*</span>
                     </label>
+                    <select
+                      value={winningMemberId}
+                      onChange={(e) => setWinningMemberId(e.target.value)}
+                      required
+                      disabled={enrolledMembers.length === 0}
+                      className="form-input form-select winner-select"
+                    >
+                      <option value="">-- Choose Winning User --</option>
+                      {(participatingUserIds.length > 0
+                        ? enrolledMembers.filter((m) => participatingUserIds.includes(m.id))
+                        : enrolledMembers
+                      ).map((m) => (
+                        <option key={m.id} value={m.id}>
+                          🏆 {m.name} {m.memberId ? `(${m.memberId})` : ''} — {m.phone}
+                        </option>
+                      ))}
+                    </select>
+                    {winningMemberId ? (
+                      <div className="winner-confirm-pill">
+                        <Trophy size={14} color="#b45309" />
+                        <span>Winner: <strong>{enrolledMembers.find((m) => m.id === winningMemberId)?.name}</strong> will receive Month {auctionMonth} payout.</span>
+                      </div>
+                    ) : (
+                      <span className="form-hint" style={{ color: '#2563eb', fontWeight: 600 }}>
+                        Selected member will receive the auctioned prize fund payout for Month {auctionMonth}.
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Step 5: Auctioned Amount */}
+                  <div className="form-group">
+                    <label className="form-label">
+                      5. Auctioned Amount / Prize Payout (₹) <span className="req-star">*</span>
+                    </label>
+                    <div className="amount-input-wrap">
+                      <span className="rupee-symbol">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        required
+                        value={auctionAmount}
+                        onChange={(e) => setAuctionAmount(e.target.value)}
+                        placeholder="e.g., 70000"
+                        className="form-input amount-input"
+                      />
+                    </div>
+                    {selectedChit && auctionAmount && (
+                      <div className="amount-breakdown-card">
+                        <div className="breakdown-item">
+                          <span>Chit Pool Value:</span>
+                          <strong>₹{Number(selectedChit.chitValue).toLocaleString()}</strong>
+                        </div>
+                        <div className="breakdown-item">
+                          <span>Bid Discount:</span>
+                          <strong style={{ color: '#d97706' }}>
+                            ₹{Math.max(0, Number(selectedChit.chitValue) - Number(auctionAmount)).toLocaleString()}
+                          </strong>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Step 6: Payout Method & UTR */}
+                  <div className="form-row-2col">
+                    <div className="form-group">
+                      <label className="form-label">Payout Method</label>
+                      <select
+                        value={payoutMethod}
+                        onChange={(e) => setPayoutMethod(e.target.value)}
+                        className="form-input form-select"
+                      >
+                        <option value="Bank Transfer (NEFT / RTGS / IMPS)">Bank Transfer (NEFT/RTGS/IMPS)</option>
+                        <option value="Cash">Cash Handover</option>
+                        <option value="UPI">UPI / PhonePe / GPay</option>
+                        <option value="Cheque">Bank Cheque</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Bank UTR / Ref #</label>
+                      <input
+                        type="text"
+                        value={bankUtr}
+                        onChange={(e) => setBankUtr(e.target.value)}
+                        placeholder="e.g., UTR / Trans ID"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 7: Proof Upload */}
+                  <div className="form-group">
+                    <ProofUploader
+                      label="Auction Payout Proof Receipt"
+                      description="Upload payment receipt or voucher photograph"
+                      required={false}
+                      onFileSelected={(file) => setReceiptFile(file)}
+                    />
+                  </div>
+
+                  {/* Step 8: Notes */}
+                  <div className="form-group">
+                    <label className="form-label">Session Notes (Optional)</label>
                     <input
                       type="text"
-                      readOnly
-                      value={calcResults?.fixedMonthly ? `₹${calcResults.fixedMonthly.toLocaleString()}` : 'Select Chit'}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #cbd5e1',
-                        backgroundColor: '#f8fafc',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        color: '#334155',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
+                      value={auctionNotes}
+                      onChange={(e) => setAuctionNotes(e.target.value)}
+                      placeholder="e.g., 4 members placed active bids"
+                      className="form-input"
                     />
-                    <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', marginTop: '0.2rem' }}>
-                      Fixed every month
-                    </span>
                   </div>
                 </div>
-              ) : (
-                /* Written Bid Mode Inputs */
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
-                      Auction Date *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={auctionDate}
-                      onChange={(e) => setAuctionDate(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.88rem',
-                        color: '#0f172a',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                      Winner Take-Home (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      placeholder={selectedChit ? `e.g. ${selectedChit.chitValue * 0.7}` : 'e.g. 70000'}
-                      value={winnerPayout}
-                      onChange={(e) => handleWinnerPayoutChange(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1.5px solid #2563eb',
-                        backgroundColor: '#eff6ff',
-                        fontSize: '0.9rem',
-                        fontWeight: 700,
-                        color: '#1d4ed8',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <span style={{ fontSize: '0.7rem', color: '#2563eb', display: 'block', marginTop: '0.2rem' }}>
-                      Amount winner takes home
-                    </span>
-                  </div>
-
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#334155', marginBottom: '0.35rem' }}>
-                      Bid Discount (₹) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      placeholder={selectedChit ? `e.g. ${selectedChit.chitValue * 0.3}` : 'e.g. 30000'}
-                      value={winningDiscount}
-                      onChange={(e) => handleDiscountChange(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '0.5rem',
-                        border: '1px solid #cbd5e1',
-                        fontSize: '0.9rem',
-                        color: '#0f172a',
-                        outline: 'none',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                    <span style={{ fontSize: '0.7rem', color: '#64748b', display: 'block', marginTop: '0.2rem' }}>
-                      Chit Value - Take Home
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Row 3: Winning Member / Ticket * */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
-                  Winning Member / Ticket *
-                </label>
-                <select
-                  required
-                  disabled={!selectedChitId}
-                  value={winningMemberId}
-                  onChange={(e) => handleWinningMemberChange(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.9rem',
-                    color: '#0f172a',
-                    backgroundColor: selectedChitId ? '#ffffff' : '#f8fafc',
-                    outline: 'none',
-                    cursor: selectedChitId ? 'pointer' : 'not-allowed'
-                  }}
-                >
-                  {!selectedChitId ? (
-                    <option value="">-- Select a Chit Scheme First --</option>
-                  ) : approvedMembers.length === 0 ? (
-                    <option value="">-- No Approved Members in Scheme --</option>
-                  ) : (
-                    <>
-                      <option value="">-- Select Winning Member --</option>
-                      {approvedMembers.map((m, idx) => {
-                        const rawLabel = m.ticketId || `MEMBER-${m.slotNumber || (idx + 1)}`;
-                        const ticketLabel = rawLabel.replace(/^TICKET-/, 'MEMBER-');
-                        const chitAuctions = auctions.filter(a => a.chitId === selectedChitId);
-                        const prevWin = chitAuctions.find(a => 
-                          a.winningChitMemberId === m.id || 
-                          (a.winningTicket && a.winningTicket.toUpperCase() === ticketLabel.toUpperCase()) ||
-                          (a.winningTicket && a.winningTicket.replace(/^TICKET-/, 'MEMBER-').toUpperCase() === ticketLabel.toUpperCase())
-                        );
-                        return (
-                          <option 
-                            key={m.id} 
-                            value={m.id}
-                            disabled={!!prevWin}
-                          >
-                            {ticketLabel} - {m.user?.name || 'Member'} ({m.user?.phone || m.user?.email || 'N/A'}){prevWin ? ` [Won Month ${prevWin.monthNumber}]` : ''}
-                          </option>
-                        );
-                      })}
-                    </>
-                  )}
-                </select>
-                <span style={{ fontSize: '0.78rem', color: '#64748b', display: 'block', marginTop: '0.3rem', fontStyle: 'italic' }}>
-                  Please select an active chit scheme above to view member options.
-                </span>
               </div>
 
-              {/* Row 4: Auction Notes / Minutes */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
-                  Auction Notes / Minutes
-                </label>
-                <input
-                  type="text"
-                  placeholder="Optional remarks (e.g., Highest bidder after 15 rounds)"
-                  value={auctionNotes}
-                  onChange={(e) => setAuctionNotes(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '0.65rem 0.85rem',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.9rem',
-                    color: '#0f172a',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              {/* Sub-card: Winner Payout Payment Details */}
-              <div style={{
-                backgroundColor: '#eff6ff',
-                border: '1px solid #bfdbfe',
-                borderRadius: '0.75rem',
-                padding: '1.25rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '1rem' }}>💸</span>
-                  <strong style={{ fontSize: '0.92rem', color: '#2563eb' }}>
-                    Winner Payout Payment Details
-                  </strong>
-                  <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontStyle: 'italic' }}>
-                    (How is the winner being paid?)
-                  </span>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#2563eb', marginBottom: '0.35rem' }}>
-                    Payout Method *
-                  </label>
-                  <select
-                    value={payoutMethod}
-                    onChange={(e) => handlePayoutMethodChange(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem 0.85rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid #a5b4fc',
-                      backgroundColor: '#ffffff',
-                      fontSize: '0.9rem',
-                      color: '#0f172a',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="Cash">💵 Cash (Liquid Mode)</option>
-                    <option value="UPI">📱 UPI Payment</option>
-                    <option value="Bank Transfer (NEFT / RTGS / IMPS)">🏦 Bank Transfer (NEFT / RTGS / IMPS)</option>
-                    <option value="Cheque">📑 Cheque Payment</option>
-                  </select>
-                </div>
-
-                {/* 1. Cash Mode */}
-                {payoutMethod === 'Cash' && (
-                  <div style={{
-                    padding: '0.85rem 1rem',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '0.5rem',
-                    border: '1px solid #bfdbfe',
-                    color: '#2563eb',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.65rem'
-                  }}>
-                    <span style={{ fontSize: '1.35rem' }}>💵</span>
-                    <div>
-                      <strong style={{ display: 'block', color: '#1d4ed8', marginBottom: '0.15rem' }}>
-                        Liquid Cash Payment Mode
-                      </strong>
-                      <span>Winner will be paid directly in cash. No screenshot or bank transaction details required.</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. UPI Mode */}
-                {payoutMethod === 'UPI' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                        UPI Transaction ID / Ref No. *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. 428910284729 / UPI-TXN-984"
-                        value={bankUtr}
-                        onChange={(e) => setBankUtr(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '0.6rem 0.85rem',
-                          borderRadius: '0.5rem',
-                          border: '1px solid #a5b4fc',
-                          backgroundColor: '#ffffff',
-                          fontSize: '0.88rem',
-                          color: '#0f172a',
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                        Upload UPI Payment Screenshot *
-                      </label>
-                      <input
-                        type="file"
-                        required
-                        accept="image/*,.pdf"
-                        onChange={(e) => setReceiptFile(e.target.files[0] || null)}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '0.5rem',
-                          border: '1px dashed #a5b4fc',
-                          backgroundColor: '#ffffff',
-                          fontSize: '0.85rem',
-                          color: '#475569',
-                          outline: 'none'
-                        }}
-                      />
-                      {receiptFile && (
-                        <span style={{ fontSize: '0.74rem', color: '#1d4ed8', fontWeight: 600, display: 'block', marginTop: '0.25rem' }}>
-                          ✓ Selected: {receiptFile.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* 3. Cheque Mode */}
-                {payoutMethod === 'Cheque' && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                        Beneficiary Name (Payee) *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Santhosh Kumar"
-                        value={beneficiaryBank}
-                        onChange={(e) => setBeneficiaryBank(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '0.6rem 0.85rem',
-                          borderRadius: '0.5rem',
-                          border: '1px solid #a5b4fc',
-                          backgroundColor: '#ffffff',
-                          fontSize: '0.88rem',
-                          color: '#0f172a',
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                        Cheque Number *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. CHQ492810"
-                        value={bankUtr}
-                        onChange={(e) => setBankUtr(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '0.6rem 0.85rem',
-                          borderRadius: '0.5rem',
-                          border: '1px solid #a5b4fc',
-                          backgroundColor: '#ffffff',
-                          fontSize: '0.88rem',
-                          color: '#0f172a',
-                          outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. Bank Transfer (NEFT / RTGS / IMPS) Mode */}
-                {payoutMethod === 'Bank Transfer (NEFT / RTGS / IMPS)' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                          Beneficiary Bank Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. HDFC Bank, SBI, ICICI"
-                          value={beneficiaryBank}
-                          onChange={(e) => setBeneficiaryBank(e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.6rem 0.85rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid #a5b4fc',
-                            backgroundColor: '#ffffff',
-                            fontSize: '0.88rem',
-                            color: '#0f172a',
-                            outline: 'none',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                          Bank UTR / Transaction Ref No. *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. N20261984210"
-                          value={bankUtr}
-                          onChange={(e) => setBankUtr(e.target.value)}
-                          style={{
-                            width: '100%',
-                            padding: '0.6rem 0.85rem',
-                            borderRadius: '0.5rem',
-                            border: '1px solid #a5b4fc',
-                            backgroundColor: '#ffffff',
-                            fontSize: '0.88rem',
-                            color: '#0f172a',
-                            outline: 'none',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#2563eb', marginBottom: '0.35rem' }}>
-                        Upload Bank Transfer Proof / Receipt *
-                      </label>
-                      <input
-                        type="file"
-                        required
-                        accept="image/*,.pdf"
-                        onChange={(e) => setReceiptFile(e.target.files[0] || null)}
-                        style={{
-                          width: '100%',
-                          padding: '0.5rem 0.75rem',
-                          borderRadius: '0.5rem',
-                          border: '1px dashed #a5b4fc',
-                          backgroundColor: '#ffffff',
-                          fontSize: '0.85rem',
-                          color: '#475569',
-                          outline: 'none'
-                        }}
-                      />
-                      {receiptFile && (
-                        <span style={{ fontSize: '0.74rem', color: '#1d4ed8', fontWeight: 600, display: 'block', marginTop: '0.25rem' }}>
-                          ✓ Selected: {receiptFile.name}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Record Button */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+              {/* Form Bottom Actions */}
+              <div className="form-actions-bar">
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{
-                    backgroundColor: '#4f6ee8',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '9999px',
-                    padding: '0.75rem 1.85rem',
-                    fontSize: '0.92rem',
-                    fontWeight: 700,
-                    cursor: submitting ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#3b5bdb')}
-                  onMouseOut={(e) => !submitting && (e.currentTarget.style.backgroundColor = '#4f6ee8')}
+                  className="submit-auction-btn"
                 >
                   <Check size={18} />
-                  <span>{submitting ? 'RECORDING...' : (auctionType === 'fixed' ? 'RECORD FIXED CLAIM' : 'RECORD AUCTION RESULT')}</span>
+                  <span>{submitting ? 'Saving Auction Record...' : 'Save Auction Record & Proof'}</span>
                 </button>
               </div>
             </form>
           </div>
-        ) : (
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '0.85rem',
-            border: '1px solid #e2e8f0',
-            padding: '2rem',
-            textAlign: 'center'
-          }}>
-            <Gavel size={42} color="#2563eb" style={{ margin: '0 auto 1rem auto' }} />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>Live Chit Auctions & Dividends</h3>
-            <p style={{ color: '#64748b', fontSize: '0.9rem', maxWidth: '520px', margin: '0.5rem auto 1.5rem auto' }}>
-              Transparency in reverse bidding and fixed schemes: members receive the chit payout, and dividends reduce every member's payment schedule.
-            </p>
-          </div>
-        )}
+        </ScrollAnimationWrapper>
+      )}
 
-        {/* Right Column: SERVER FINANCIAL PREVIEW */}
-        <div style={{
-          backgroundColor: '#0c1427',
-          borderRadius: '0.85rem',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '1.75rem',
-          color: '#ffffff',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          minHeight: '440px',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.25)'
-        }}>
-          <div>
-            <span style={{
-              display: 'inline-block',
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              color: '#38bdf8',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              marginBottom: '0.35rem'
-            }}>
-              SERVER FINANCIAL PREVIEW
-            </span>
-            <h3 style={{
-              fontSize: '1.35rem',
-              fontWeight: 800,
-              color: '#ffffff',
-              margin: '0 0 1.5rem 0',
-              letterSpacing: '-0.01em'
-            }}>
-              {auctionType === 'fixed' ? 'Fixed Scheme Payout' : 'Auction Payout & Dividends'}
-            </h3>
-
-            {!calcResults ? (
-              <div style={{
-                textAlign: 'center',
-                padding: '3rem 1.5rem',
-                color: '#64748b',
-                fontSize: '0.9rem',
-                lineHeight: 1.6
-              }}>
-                Select a scheme to view real-time financial calculations.
+      {/* ========================================================================= */}
+      {/* TAB 2: RECORDED AUCTIONS HISTORY & RECEIPTS                               */}
+      {/* ========================================================================= */}
+      {activeTab === 'history' && (
+        <ScrollAnimationWrapper>
+          <div className="history-container-card">
+            {/* Header & Filter Controls */}
+            <div className="history-filter-bar">
+              <div>
+                <h2 className="history-card-title">
+                  <Building size={20} color="#2563eb" />
+                  <span>Recorded Auction History ({filteredAuctions.length})</span>
+                </h2>
+                <p className="history-card-desc">
+                  Registry of past auctions, prize payouts, participating bidders, and proof vouchers.
+                </p>
               </div>
-            ) : calcResults.isFixed ? (
-              /* Fixed Scheme Financial Preview */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Total Chit Value</span>
-                  <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>₹{calcResults.chitValue.toLocaleString()}</strong>
-                </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(34, 197, 94, 0.12)', borderRadius: '0.5rem', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
-                  <div>
-                    <span style={{ color: '#bfdbfe', fontSize: '0.82rem', fontWeight: 600, display: 'block' }}>Guaranteed Winner Payout</span>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>Month {calcResults.monthNumber} Slot</span>
-                  </div>
-                  <strong style={{ color: '#818cf8', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
-                </div>
+              <div className="history-controls">
+                <select
+                  value={filterChitId}
+                  onChange={(e) => setFilterChitId(e.target.value)}
+                  className="history-filter-select"
+                >
+                  <option value="all">All Chit Schemes</option>
+                  {chits.map((c) => (
+                    <option key={c.id || c._id} value={c.id || c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Fixed Monthly Payment</span>
-                  <strong style={{ color: '#38bdf8', fontSize: '0.95rem' }}>
-                    ₹{calcResults.fixedMonthly.toLocaleString()}
-                  </strong>
+                <div className="history-search-wrap">
+                  <Search size={15} className="history-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search winner, UTR, chit..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="history-search-input"
+                  />
                 </div>
+              </div>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Total Member Paid (over {calcResults.duration}M)</span>
-                  <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>₹{calcResults.totalMemberContribution.toLocaleString()}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                  <div>
-                    <span style={{ color: '#bae6fd', fontSize: '0.85rem', fontWeight: 600, display: 'block' }}>Member Total Savings Benefit</span>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>Chit Value - Total Paid</span>
-                  </div>
-                  <strong style={{ color: '#38bdf8', fontSize: '1.05rem', fontWeight: 800 }}>₹{calcResults.totalBenefit.toLocaleString()}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '0.5rem' }}>
-                  <div>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.85rem', display: 'block' }}>Every Month Payable</span>
-                    <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Equal fixed installment</span>
-                  </div>
-                  <strong style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 700 }}>₹{calcResults.nextPayableAmount.toLocaleString()}</strong>
-                </div>
+            {/* Empty State */}
+            {filteredAuctions.length === 0 ? (
+              <div className="history-empty-state">
+                <Gavel size={48} color="#cbd5e1" style={{ margin: '0 auto 1rem' }} />
+                <h3>No Auction Records Found</h3>
+                <p>
+                  {searchQuery || filterChitId !== 'all'
+                    ? 'No records match your search filter. Try clearing filters.'
+                    : 'Conduct and save your first auction using the "Conduct New Auction" tab.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('conduct')}
+                  className="btn-create-auction"
+                >
+                  <Plus size={16} />
+                  <span>Conduct Auction Now</span>
+                </button>
               </div>
             ) : (
-              /* Written Bid Financial Preview */
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Chit Value</span>
-                  <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>₹{calcResults.chitValue.toLocaleString()}</strong>
+              <>
+                {/* Desktop / Tablet Table View (>= 768px) */}
+                <div className="history-table-wrapper hidden-on-mobile">
+                  <table className="history-table">
+                    <thead>
+                      <tr>
+                        <th>Chit & Month</th>
+                        <th>Winning Member</th>
+                        <th>Auctioned Amount</th>
+                        <th>Participating Bidders</th>
+                        <th>Payout & UTR</th>
+                        <th>Proof Receipt</th>
+                        <th style={{ textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredAuctions.map((a) => {
+                        const chitName = a.chit?.name || a.chitId?.name || 'Chit Scheme';
+                        const winner = a.winningMember || {};
+                        const participants = a.participatingUsers || [];
+                        const hasProof = a.receiptUrl && a.receiptUrl !== 'MANUAL_ENTRY';
+
+                        return (
+                          <tr key={a.id || a._id}>
+                            {/* Chit & Month */}
+                            <td>
+                              <div className="table-chit-name">{chitName}</div>
+                              <div className="table-chit-meta">
+                                <span className="month-pill">{formatChitMonthYear(a.chit, a.monthNumber)} • M{a.monthNumber}</span>
+                                <span className="date-text">
+                                  {a.auctionDate
+                                    ? new Date(a.auctionDate).toLocaleDateString('en-IN', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                      })
+                                    : '—'}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Winning Member */}
+                            <td>
+                              <div className="table-winner-cell">
+                                <div className="winner-trophy-badge">🏆</div>
+                                <div>
+                                  <div className="winner-name">{winner.name || 'Member'}</div>
+                                  <div className="winner-sub">
+                                    {winner.memberId ? `ID: ${winner.memberId}` : ''}{' '}
+                                    {winner.phone ? `• ${winner.phone}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Auctioned Amount */}
+                            <td>
+                              <div className="payout-amount-text">
+                                ₹{Number(a.auctionAmount || a.winnerPayout || 0).toLocaleString()}
+                              </div>
+                              <div className="payout-sub">Prize payout given</div>
+                            </td>
+
+                            {/* Participating Bidders */}
+                            <td>
+                              {participants.length === 0 ? (
+                                <span className="all-enrolled-tag">All enrolled members</span>
+                              ) : (
+                                <div className="bidders-chips-wrap">
+                                  {participants.slice(0, 3).map((p, idx) => (
+                                    <span key={p.id || p._id || idx} className="bidder-chip">
+                                      {p.name || 'Member'}
+                                    </span>
+                                  ))}
+                                  {participants.length > 3 && (
+                                    <span className="bidder-chip-more">
+                                      +{participants.length - 3} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Payout & UTR */}
+                            <td>
+                              <div className="payout-method-text">{a.payoutMethod || 'Bank Transfer'}</div>
+                              {a.bankUtr && <div className="payout-utr-code">UTR: {a.bankUtr}</div>}
+                            </td>
+
+                            {/* Proof Receipt */}
+                            <td>
+                              {hasProof ? (
+                                <div className="proof-cell">
+                                  <img
+                                    src={getFullImgUrl(a.receiptUrl)}
+                                    alt="Receipt"
+                                    onClick={() => setLightboxUrl(getFullImgUrl(a.receiptUrl))}
+                                    className="proof-thumb"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setLightboxUrl(getFullImgUrl(a.receiptUrl))}
+                                    className="view-proof-btn"
+                                  >
+                                    <Eye size={13} />
+                                    <span>View</span>
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className="no-proof-text">No receipt</span>
+                              )}
+                            </td>
+
+                            {/* Action */}
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteAuction(a.id || a._id, a.monthNumber)}
+                                title="Delete Record"
+                                className="delete-auction-btn"
+                              >
+                                <Trash2 size={13} />
+                                <span>Delete</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(34, 197, 94, 0.12)', borderRadius: '0.5rem', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
-                  <div>
-                    <span style={{ color: '#bfdbfe', fontSize: '0.82rem', fontWeight: 600, display: 'block' }}>Net Winner Payout (Take-Home)</span>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>Amount transferred to winner</span>
-                  </div>
-                  <strong style={{ color: '#818cf8', fontSize: '1.2rem', fontWeight: 800 }}>₹{calcResults.winnerPayout.toLocaleString()}</strong>
-                </div>
+                {/* Mobile Responsive Cards View (< 768px) */}
+                <div className="history-mobile-cards">
+                  {filteredAuctions.map((a) => {
+                    const chitName = a.chit?.name || a.chitId?.name || 'Chit Scheme';
+                    const winner = a.winningMember || {};
+                    const participants = a.participatingUsers || [];
+                    const hasProof = a.receiptUrl && a.receiptUrl !== 'MANUAL_ENTRY';
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Winning Bid Discount</span>
-                  <strong style={{ color: '#f59e0b', fontSize: '0.95rem' }}>
-                    ₹{calcResults.discount.toLocaleString()} ({calcResults.discountPercent}%)
-                  </strong>
-                </div>
+                    return (
+                      <div key={a.id || a._id} className="mobile-auction-card">
+                        <div className="mobile-card-top">
+                          <div>
+                            <div className="mobile-chit-name">{chitName}</div>
+                            <span className="month-pill">{formatChitMonthYear(a.chit, a.monthNumber)} • M{a.monthNumber}</span>
+                            <span className="mobile-date">
+                              {a.auctionDate
+                                ? new Date(a.auctionDate).toLocaleDateString('en-IN', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                  })
+                                : ''}
+                            </span>
+                          </div>
+                          <div className="mobile-amount-badge">
+                            ₹{Number(a.auctionAmount || a.winnerPayout || 0).toLocaleString()}
+                          </div>
+                        </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Foreman Commission ({calcResults.commissionPercent}%)</span>
-                  <strong style={{ color: '#ffffff', fontSize: '0.95rem' }}>₹{calcResults.foremanCommission.toLocaleString()}</strong>
-                </div>
+                        <div className="mobile-card-divider" />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.6rem 0.75rem', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: '0.4rem' }}>
-                  <div>
-                    <span style={{ color: '#94a3b8', fontSize: '0.85rem', display: 'block' }}>Distributable Dividend Pool</span>
-                    <span style={{ color: '#64748b', fontSize: '0.7rem' }}>Discount (₹{calcResults.discount.toLocaleString()}) - Foreman (₹{calcResults.foremanCommission.toLocaleString()})</span>
-                  </div>
-                  <strong style={{ color: '#38bdf8', fontSize: '0.95rem' }}>₹{calcResults.distributablePool.toLocaleString()}</strong>
-                </div>
+                        <div className="mobile-winner-row">
+                          <div className="winner-trophy-badge">🏆</div>
+                          <div>
+                            <div className="winner-name">{winner.name || 'Member'}</div>
+                            <div className="winner-sub">
+                              {winner.memberId ? `ID: ${winner.memberId}` : ''}{' '}
+                              {winner.phone ? `• ${winner.phone}` : ''}
+                            </div>
+                          </div>
+                        </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(56, 189, 248, 0.1)', borderRadius: '0.5rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-                  <div>
-                    <span style={{ color: '#bae6fd', fontSize: '0.85rem', fontWeight: 600, display: 'block' }}>Dividend Per Member</span>
-                    <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem' }}>₹{calcResults.distributablePool.toLocaleString()} ÷ {calcResults.totalMembers} members</span>
-                  </div>
-                  <strong style={{ color: '#38bdf8', fontSize: '1.05rem', fontWeight: 800 }}>₹{calcResults.dividendPerMember.toLocaleString()}</strong>
-                </div>
+                        <div className="mobile-details-grid">
+                          <div>
+                            <span className="mobile-detail-lbl">Payout Method</span>
+                            <div className="mobile-detail-val">{a.payoutMethod || 'Bank Transfer'}</div>
+                            {a.bankUtr && <div className="payout-utr-code">UTR: {a.bankUtr}</div>}
+                          </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '0.5rem' }}>
-                  <div>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.85rem', display: 'block' }}>Next Month Payable Per Member</span>
-                    <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>Nominal (₹{calcResults.nominalMonthly.toLocaleString()}) - Dividend (₹{calcResults.dividendPerMember.toLocaleString()})</span>
-                  </div>
-                  <strong style={{ color: '#f8fafc', fontSize: '1rem', fontWeight: 700 }}>₹{calcResults.nextPayableAmount.toLocaleString()}</strong>
+                          <div>
+                            <span className="mobile-detail-lbl">Bidders</span>
+                            <div className="mobile-detail-val">
+                              {participants.length > 0 ? `${participants.length} participated` : 'All enrolled'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mobile-card-footer">
+                          {hasProof ? (
+                            <button
+                              type="button"
+                              onClick={() => setLightboxUrl(getFullImgUrl(a.receiptUrl))}
+                              className="mobile-view-proof-btn"
+                            >
+                              <Eye size={14} />
+                              <span>View Receipt Proof</span>
+                            </button>
+                          ) : (
+                            <span className="no-proof-text">No receipt proof</span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAuction(a.id || a._id, a.monthNumber)}
+                            className="delete-auction-btn"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              </>
             )}
           </div>
+        </ScrollAnimationWrapper>
+      )}
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            paddingTop: '1.25rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            marginTop: '1.5rem',
-            color: '#818cf8',
-            fontSize: '0.78rem',
-            fontWeight: 600
-          }}>
-            <ShieldCheck size={16} />
-            <span>Decimals safe math engine verified</span>
-          </div>
-        </div>
-      </div>
-
-      {/* AUCTION HISTORY RECORDS Table */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '0.85rem',
-        border: '1px solid #e2e8f0',
-        overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ padding: '1.25rem 1.75rem', borderBottom: '1px solid #f1f5f9' }}>
-          <h2 style={{
-            fontSize: '0.95rem',
-            fontWeight: 800,
-            color: '#0f172a',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-            margin: 0
-          }}>
-            AUCTION HISTORY RECORDS
-          </h2>
-        </div>
-
-        {auctions.length === 0 ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#64748b' }}>
-            <p style={{ margin: 0, fontSize: '0.95rem' }}>
-              No auction records found yet. Record the first monthly auction above.
-            </p>
-          </div>
-        ) : (
-          <div style={{ 
-            overflowX: 'auto', 
-            width: '100%', 
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'thin'
-          }}>
-            <table style={{ 
-              width: '100%', 
-              minWidth: '1280px', 
-              borderCollapse: 'collapse', 
-              textAlign: 'left', 
-              fontSize: '0.88rem' 
-            }}>
-              <thead>
-                <tr style={{ backgroundColor: '#0c1427', color: '#ffffff' }}>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '220px', width: '220px', whiteSpace: 'nowrap' }}>SCHEME</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '100px', whiteSpace: 'nowrap' }}>MONTH</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '110px', whiteSpace: 'nowrap' }}>DATE</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '160px', whiteSpace: 'nowrap' }}>WINNING MEMBER</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '130px', whiteSpace: 'nowrap' }}>WINNING DISCOUNT</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '130px', whiteSpace: 'nowrap' }}>FOREMAN COMM.</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '130px', whiteSpace: 'nowrap' }}>WINNER PAYOUT</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '130px', whiteSpace: 'nowrap' }}>DIVIDEND / MEMBER</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '120px', whiteSpace: 'nowrap' }}>NEXT PAYABLE</th>
-                  <th style={{ padding: '0.9rem 1rem', fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.04em', textTransform: 'uppercase', minWidth: '100px', textAlign: 'center', whiteSpace: 'nowrap' }}>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auctions.map((auc, index) => {
-                  const dateStr = auc.auctionDate
-                    ? new Date(auc.auctionDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
-                    : '-';
-
-                  const totalMonths = Number(auc.chit?.durationMonths || auc.chit?.totalMonths || 12);
-                  const isFinalMonth = Number(auc.monthNumber) >= totalMonths || Number(auc.nextPayableAmount) === 0;
-                  const isFixed = auc.chit?.termsAndConditions?.toLowerCase().includes('fixed') || (auc.dividendPerMember === 0 && auc.foremanCommission === 0);
-                  const displayForeman = isFixed ? 0 : Number(auc.foremanCommission);
-                  const displayDividend = isFixed ? 0 : Number(auc.dividendPerMember);
-                  const displayNextPayable = isFinalMonth 
-                    ? 0
-                    : (isFixed 
-                        ? (Number(auc.chit?.monthlyContribution) || Number(auc.nextPayableAmount))
-                        : Number(auc.nextPayableAmount));
-
-                  return (
-                    <tr
-                      key={auc.id}
-                      style={{
-                        borderBottom: '1px solid #f1f5f9',
-                        backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8fafc',
-                        transition: 'background-color 0.15s ease'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f1f5f9'}
-                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8fafc'}
-                    >
-                      <td style={{ padding: '0.9rem 1rem', fontWeight: 700, color: '#0f172a', minWidth: '220px' }}>
-                        {auc.chit?.name || 'Chit Scheme'}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', color: '#334155', fontWeight: 600 }}>
-                        Month {auc.monthNumber}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', color: '#64748b' }}>
-                        {dateStr}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', color: '#0f172a' }}>
-                        <div style={{ fontWeight: 600 }}>{auc.winningMember?.name || 'Winner'}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{auc.winningTicket || ''}</div>
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', fontWeight: 700, color: '#f59e0b' }}>
-                        ₹{Number(auc.winningBidDiscount).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', color: '#475569' }}>
-                        ₹{displayForeman.toLocaleString()}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', fontWeight: 700, color: '#2563eb' }}>
-                        ₹{Number(auc.winnerPayout).toLocaleString()}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', fontWeight: 700, color: '#0284c7' }}>
-                        ₹{displayDividend.toLocaleString()}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', fontWeight: 700, color: '#0f172a' }}>
-                        {isFinalMonth ? (
-                          <span style={{ backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', padding: '0.2rem 0.65rem', borderRadius: '6px', fontSize: '0.78rem' }}>
-                            ₹0 (Completed)
-                          </span>
-                        ) : (
-                          `₹${displayNextPayable.toLocaleString()}`
-                        )}
-                      </td>
-                      <td style={{ padding: '0.9rem 1rem', textAlign: 'center' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                          {auc.receiptUrl && (
-                            <button
-                              type="button"
-                              onClick={() => setPreviewReceiptUrl(auc.receiptUrl)}
-                              title="View Payout Receipt"
-                              style={{
-                                background: '#eff6ff',
-                                border: '1px solid #bfdbfe',
-                                color: '#1d4ed8',
-                                borderRadius: '0.4rem',
-                                padding: '0.35rem 0.6rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.25rem',
-                                fontSize: '0.78rem',
-                                fontWeight: 600
-                              }}
-                            >
-                              <Eye size={13} />
-                              <span>Receipt</span>
-                            </button>
-                          )}
-                          {user?.role === 'superadmin' && (
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteAuction(auc.id)}
-                              title="Delete Auction Record"
-                              style={{
-                                background: '#fef2f2',
-                                border: '1px solid #fecaca',
-                                color: '#dc2626',
-                                borderRadius: '0.4rem',
-                                padding: '0.35rem 0.5rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Lightbox / Receipt Modal */}
-      {previewReceiptUrl && (
-        <div
-          onClick={() => setPreviewReceiptUrl(null)}
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.75)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1.5rem'
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '0.85rem',
-              maxWidth: '600px',
-              width: '100%',
-              padding: '1.5rem',
-              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)',
-              position: 'relative'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <strong style={{ fontSize: '1rem', color: '#0f172a' }}>Winner Payout Proof Receipt</strong>
-              <button
-                onClick={() => setPreviewReceiptUrl(null)}
-                style={{
-                  border: 'none',
-                  background: '#f1f5f9',
-                  borderRadius: '50%',
-                  width: '32px',
-                  height: '32px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  fontWeight: 700
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ textAlign: 'center', maxHeight: '70vh', overflowY: 'auto' }}>
-              <img
-                src={previewReceiptUrl.startsWith('http') ? previewReceiptUrl : `${API_URL.replace('/api', '')}${previewReceiptUrl}`}
-                alt="Payout Receipt"
-                style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: '0.5rem', objectFit: 'contain' }}
-              />
-            </div>
+      {/* Lightbox Modal for Receipt Proofs */}
+      {lightboxUrl && (
+        <div onClick={() => setLightboxUrl(null)} className="lightbox-overlay">
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img src={lightboxUrl} alt="Receipt Proof" className="lightbox-img" />
+            <button
+              type="button"
+              onClick={() => setLightboxUrl(null)}
+              className="lightbox-close-btn"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}
 
+      {/* Scoped Responsive Styles */}
+      <style>{`
+        .auction-page-container {
+          width: 100%;
+          max-width: 1300px;
+          margin: 0 auto;
+          box-sizing: border-box;
+        }
+
+        /* Top Banner */
+        .auction-header-banner {
+          background: linear-gradient(135deg, #0a1e3b 0%, #1e3a8a 100%);
+          color: #ffffff;
+          border-radius: 16px;
+          padding: 1.75rem 2rem;
+          margin-bottom: 1.5rem;
+          box-shadow: 0 10px 25px rgba(10, 30, 59, 0.22);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 1.25rem;
+        }
+
+        .auction-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          background-color: rgba(251, 191, 36, 0.15);
+          border: 1px solid #fbbf24;
+          color: #fbbf24;
+          padding: 0.3rem 0.8rem;
+          border-radius: 9999px;
+          font-size: 0.76rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 0.5rem;
+        }
+
+        .auction-title {
+          font-size: 1.95rem;
+          font-weight: 900;
+          margin: 0;
+          letter-spacing: -0.02em;
+        }
+
+        .highlight-text {
+          color: #fbbf24;
+        }
+
+        .auction-subtitle {
+          color: #cbd5e1;
+          margin: 0.45rem 0 0 0;
+          font-size: 0.92rem;
+          max-width: 650px;
+          line-height: 1.45;
+        }
+
+        .refresh-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.65rem 1.25rem;
+          border-radius: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          background-color: rgba(255, 255, 255, 0.12);
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.88rem;
+          cursor: pointer;
+          backdrop-filter: blur(6px);
+          transition: all 0.2s ease;
+        }
+        .refresh-btn:hover:not(:disabled) {
+          background-color: rgba(255, 255, 255, 0.22);
+          transform: translateY(-1px);
+        }
+
+        /* Stat Cards */
+        .auction-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1rem;
+          margin-bottom: 1.75rem;
+        }
+
+        .auction-stat-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 14px;
+          padding: 1.15rem 1.25rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+          transition: transform 0.2s, box-shadow 0.2s;
+          min-width: 0;
+        }
+        .auction-stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        .stat-card-icon {
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .stat-card-label {
+          display: block;
+          font-size: 0.74rem;
+          font-weight: 800;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .stat-card-value {
+          font-size: 1.55rem;
+          font-weight: 900;
+          color: #0f172a;
+          line-height: 1.2;
+          margin: 0.15rem 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .stat-card-sub {
+          font-size: 0.74rem;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        /* Alert Box */
+        .auction-alert-box {
+          padding: 0.9rem 1.25rem;
+          border-radius: 12px;
+          margin-bottom: 1.5rem;
+          font-size: 0.9rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          position: relative;
+        }
+        .alert-error {
+          background-color: #fee2e2;
+          color: #dc2626;
+          border: 1.5px solid #f87171;
+        }
+        .alert-success {
+          background-color: #ecfdf5;
+          color: #059669;
+          border: 1.5px solid #6ee7b7;
+        }
+        .alert-close-btn {
+          margin-left: auto;
+          background: none;
+          border: none;
+          font-size: 1rem;
+          cursor: pointer;
+          color: inherit;
+          opacity: 0.7;
+        }
+
+        /* Navigation Tabs */
+        .auction-nav-tabs {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          margin-bottom: 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          padding-bottom: 0.65rem;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .auction-nav-tabs::-webkit-scrollbar {
+          display: none;
+        }
+
+        .tab-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.55rem;
+          padding: 0.7rem 1.4rem;
+          border-radius: 10px;
+          border: 1px solid transparent;
+          background-color: transparent;
+          color: #64748b;
+          font-size: 0.95rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+        }
+        .tab-btn:hover {
+          color: #1e3a8a;
+          background-color: #f1f5f9;
+        }
+        .tab-btn.active {
+          background-color: #1e3a8a;
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(30, 58, 138, 0.25);
+        }
+
+        .tab-count-badge {
+          background-color: rgba(255, 255, 255, 0.25);
+          color: inherit;
+          font-size: 0.75rem;
+          font-weight: 800;
+          padding: 0.15rem 0.5rem;
+          border-radius: 9999px;
+        }
+        .tab-btn:not(.active) .tab-count-badge {
+          background-color: #e2e8f0;
+          color: #475569;
+        }
+
+        /* Conduct Auction Card */
+        .conduct-auction-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          overflow: hidden;
+        }
+
+        .conduct-card-header {
+          background-color: #f8fafc;
+          padding: 1.25rem 1.75rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .conduct-header-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 10px;
+          background-color: #eff6ff;
+          color: #2563eb;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .conduct-header-title {
+          font-size: 1.25rem;
+          font-weight: 800;
+          margin: 0;
+          color: #0f172a;
+        }
+
+        .conduct-header-desc {
+          font-size: 0.82rem;
+          color: #64748b;
+          margin: 0.2rem 0 0 0;
+        }
+
+        .conduct-form {
+          padding: 1.75rem;
+        }
+
+        .conduct-form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
+        }
+
+        .form-col {
+          display: flex;
+          flex-direction: column;
+          gap: 1.25rem;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .form-label {
+          font-size: 0.85rem;
+          font-weight: 700;
+          color: #334155;
+          margin-bottom: 0.4rem;
+        }
+
+        .req-star {
+          color: #dc2626;
+        }
+
+        .form-row-2col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+        }
+
+        .form-input {
+          width: 100%;
+          padding: 0.7rem 0.85rem;
+          border-radius: 9px;
+          border: 1.5px solid #cbd5e1;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #0f172a;
+          background-color: #ffffff;
+          box-sizing: border-box;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .form-select {
+          cursor: pointer;
+        }
+
+        .winner-select {
+          border: 2px solid #2563eb !important;
+          font-size: 0.92rem !important;
+          font-weight: 700 !important;
+        }
+
+        .selected-chit-badge-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.45rem;
+          margin-top: 0.45rem;
+        }
+
+        .chit-info-chip {
+          background-color: #eff6ff;
+          color: #1e40af;
+          border: 1px solid #bfdbfe;
+          font-size: 0.74rem;
+          padding: 0.2rem 0.55rem;
+          border-radius: 6px;
+        }
+
+        .winner-confirm-pill {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          background-color: #fef3c7;
+          border: 1px solid #fde68a;
+          color: #92400e;
+          padding: 0.4rem 0.65rem;
+          border-radius: 7px;
+          font-size: 0.78rem;
+          margin-top: 0.45rem;
+        }
+
+        .form-hint {
+          font-size: 0.74rem;
+          color: #64748b;
+          margin-top: 0.35rem;
+        }
+
+        /* Bidders Box */
+        .bidders-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.45rem;
+        }
+
+        .bidders-quick-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+
+        .link-btn {
+          background: none;
+          border: none;
+          color: #2563eb;
+          font-size: 0.76rem;
+          font-weight: 700;
+          cursor: pointer;
+          padding: 0;
+        }
+        .link-btn:hover {
+          text-decoration: underline;
+        }
+        .link-btn-secondary {
+          color: #64748b;
+        }
+
+        .dot-sep {
+          color: #cbd5e1;
+          font-size: 0.8rem;
+        }
+
+        .bidders-empty-box {
+          padding: 1.5rem;
+          background-color: #f8fafc;
+          border-radius: 8px;
+          border: 1px dashed #cbd5e1;
+          text-align: center;
+          font-size: 0.82rem;
+          color: #64748b;
+        }
+
+        .bidders-list-box {
+          max-height: 210px;
+          overflow-y: auto;
+          border: 1.5px solid #cbd5e1;
+          border-radius: 9px;
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+          background-color: #f8fafc;
+        }
+
+        .bidder-item {
+          padding: 0.55rem 0.75rem;
+          border-radius: 7px;
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          cursor: pointer;
+          font-size: 0.84rem;
+          transition: all 0.15s ease;
+          user-select: none;
+        }
+        .bidder-item:hover {
+          border-color: #93c5fd;
+          background-color: #f0fdf4;
+        }
+        .bidder-item.selected {
+          background-color: #eff6ff;
+          border-color: #3b82f6;
+        }
+
+        .bidder-item-left {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          min-width: 0;
+        }
+
+        .bidder-checkbox {
+          cursor: pointer;
+          width: 16px;
+          height: 16px;
+          accent-color: #2563eb;
+        }
+
+        .bidder-name {
+          font-weight: 700;
+          color: #0f172a;
+          word-break: break-word;
+        }
+
+        .bidder-meta {
+          font-size: 0.72rem;
+          color: #64748b;
+        }
+
+        .bidder-slot-badge {
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #1d4ed8;
+          background-color: #dbeafe;
+          padding: 0.18rem 0.5rem;
+          border-radius: 6px;
+          white-space: nowrap;
+        }
+
+        /* Amount Field */
+        .amount-input-wrap {
+          position: relative;
+        }
+
+        .rupee-symbol {
+          position: absolute;
+          left: 0.9rem;
+          top: 50%;
+          transform: translateY(-50%);
+          font-weight: 900;
+          color: #16a34a;
+          font-size: 1.25rem;
+        }
+
+        .amount-input {
+          padding-left: 2.3rem !important;
+          border: 2px solid #16a34a !important;
+          font-size: 1.35rem !important;
+          font-weight: 900 !important;
+          color: #14532d !important;
+        }
+        .amount-input:focus {
+          border-color: #15803d !important;
+          box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+        }
+
+        .amount-breakdown-card {
+          margin-top: 0.5rem;
+          padding: 0.65rem 0.85rem;
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8rem;
+          color: #475569;
+        }
+
+        .breakdown-item strong {
+          margin-left: 0.35rem;
+        }
+
+        /* Form Bottom Button */
+        .form-actions-bar {
+          margin-top: 1.75rem;
+          padding-top: 1.25rem;
+          border-top: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        .submit-auction-btn {
+          padding: 0.85rem 2rem;
+          border-radius: 10px;
+          border: none;
+          background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+          color: #ffffff;
+          font-weight: 800;
+          font-size: 0.98rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.55rem;
+          box-shadow: 0 4px 15px rgba(22, 163, 74, 0.35);
+          transition: all 0.2s ease;
+        }
+        .submit-auction-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(22, 163, 74, 0.45);
+        }
+        .submit-auction-btn:disabled {
+          background: #94a3b8;
+          cursor: not-allowed;
+          box-shadow: none;
+        }
+
+        /* History Table Container */
+        .history-container-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          overflow: hidden;
+        }
+
+        .history-filter-bar {
+          background-color: #f8fafc;
+          padding: 1.25rem 1.75rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+
+        .history-card-title {
+          font-size: 1.2rem;
+          font-weight: 800;
+          margin: 0;
+          color: #0f172a;
+          display: flex;
+          align-items: center;
+          gap: 0.55rem;
+        }
+
+        .history-card-desc {
+          font-size: 0.8rem;
+          color: #64748b;
+          margin: 0.2rem 0 0 0;
+        }
+
+        .history-controls {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          flex-wrap: wrap;
+        }
+
+        .history-filter-select {
+          padding: 0.55rem 0.85rem;
+          border-radius: 8px;
+          border: 1px solid #cbd5e1;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #0f172a;
+          background-color: #fff;
+          outline: none;
+        }
+
+        .history-search-wrap {
+          position: relative;
+        }
+
+        .history-search-icon {
+          position: absolute;
+          left: 0.75rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #94a3b8;
+        }
+
+        .history-search-input {
+          padding: 0.55rem 0.85rem 0.55rem 2.2rem;
+          border-radius: 8px;
+          border: 1px solid #cbd5e1;
+          font-size: 0.85rem;
+          width: 220px;
+          outline: none;
+          box-sizing: border-box;
+        }
+        .history-search-input:focus {
+          border-color: #2563eb;
+        }
+
+        .history-empty-state {
+          text-align: center;
+          padding: 4.5rem 1.5rem;
+          color: #64748b;
+        }
+        .history-empty-state h3 {
+          font-size: 1.2rem;
+          font-weight: 800;
+          color: #1e293b;
+          margin: 0 0 0.5rem 0;
+        }
+        .history-empty-state p {
+          font-size: 0.88rem;
+          color: #64748b;
+          margin: 0 0 1.5rem 0;
+          max-width: 440px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .btn-create-auction {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.45rem;
+          padding: 0.65rem 1.4rem;
+          border-radius: 9999px;
+          border: none;
+          background-color: #2563eb;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Desktop Table */
+        .history-table-wrapper {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .history-table {
+          width: 100%;
+          min-width: 750px;
+          border-collapse: collapse;
+          text-align: left;
+          font-size: 0.84rem;
+        }
+
+        .history-table thead tr {
+          background-color: #f8fafc;
+          border-bottom: 1.5px solid #cbd5e1;
+          color: #475569;
+          font-size: 0.72rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .history-table th {
+          padding: 0.75rem 0.65rem;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .history-table td {
+          padding: 0.75rem 0.65rem;
+          border-bottom: 1px solid #e2e8f0;
+          vertical-align: middle;
+        }
+
+        .history-table tbody tr:hover {
+          background-color: #f8fafc;
+        }
+
+        .table-chit-name {
+          font-weight: 800;
+          color: #0f172a;
+          font-size: 0.9rem;
+        }
+
+        .table-chit-meta {
+          display: flex;
+          align-items: center;
+          gap: 0.45rem;
+          margin-top: 0.25rem;
+        }
+
+        .month-pill {
+          background-color: #dbeafe;
+          color: #1e40af;
+          font-weight: 800;
+          font-size: 0.72rem;
+          padding: 0.15rem 0.5rem;
+          border-radius: 4px;
+          white-space: nowrap;
+        }
+
+        .date-text {
+          font-size: 0.74rem;
+          color: #64748b;
+          white-space: nowrap;
+        }
+
+        .table-winner-cell {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+
+        .winner-trophy-badge {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background-color: #fef3c7;
+          border: 1px solid #fde68a;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 0.85rem;
+          flex-shrink: 0;
+        }
+
+        .winner-name {
+          font-weight: 800;
+          color: #0f172a;
+          font-size: 0.88rem;
+        }
+
+        .winner-sub {
+          font-size: 0.74rem;
+          color: #64748b;
+        }
+
+        .payout-amount-text {
+          font-size: 1.15rem;
+          font-weight: 900;
+          color: #15803d;
+        }
+
+        .payout-sub {
+          font-size: 0.72rem;
+          color: #64748b;
+        }
+
+        .all-enrolled-tag {
+          font-size: 0.75rem;
+          color: #94a3b8;
+          font-style: italic;
+        }
+
+        .bidders-chips-wrap {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.25rem;
+          max-width: 170px;
+        }
+
+        .bidder-chip {
+          background-color: #f1f5f9;
+          color: #334155;
+          border: 1px solid #cbd5e1;
+          padding: 0.15rem 0.45rem;
+          border-radius: 4px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          white-space: nowrap;
+        }
+
+        .bidder-chip-more {
+          background-color: #e2e8f0;
+          color: #475569;
+          padding: 0.15rem 0.45rem;
+          border-radius: 4px;
+          font-size: 0.72rem;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .payout-method-text {
+          font-weight: 700;
+          color: #0f172a;
+          font-size: 0.8rem;
+        }
+
+        .payout-utr-code {
+          font-size: 0.74rem;
+          color: #2563eb;
+          font-family: monospace;
+          font-weight: 700;
+          margin-top: 0.15rem;
+        }
+
+        .proof-cell {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .proof-thumb {
+          width: 36px;
+          height: 36px;
+          object-fit: cover;
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        .proof-thumb:hover {
+          transform: scale(1.08);
+        }
+
+        .view-proof-btn {
+          background: transparent;
+          border: none;
+          color: #2563eb;
+          font-size: 0.76rem;
+          font-weight: 700;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0;
+        }
+        .view-proof-btn:hover {
+          text-decoration: underline;
+        }
+
+        .no-proof-text {
+          font-size: 0.76rem;
+          color: #94a3b8;
+          font-style: italic;
+        }
+
+        .delete-auction-btn {
+          background-color: #fee2e2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+          border-radius: 7px;
+          padding: 0.4rem 0.65rem;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          font-size: 0.76rem;
+          font-weight: 700;
+          transition: all 0.15s ease;
+        }
+        .delete-auction-btn:hover {
+          background-color: #dc2626;
+          color: #ffffff;
+        }
+
+        /* Mobile Cards View */
+        .history-mobile-cards {
+          display: none;
+          flex-direction: column;
+          gap: 1rem;
+          padding: 1rem;
+        }
+
+        .mobile-auction-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 1rem;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+        }
+
+        .mobile-card-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 0.75rem;
+        }
+
+        .mobile-chit-name {
+          font-weight: 800;
+          font-size: 1rem;
+          color: #0f172a;
+          margin-bottom: 0.25rem;
+        }
+
+        .mobile-date {
+          font-size: 0.76rem;
+          color: #64748b;
+          margin-left: 0.5rem;
+        }
+
+        .mobile-amount-badge {
+          font-size: 1.15rem;
+          font-weight: 900;
+          color: #15803d;
+          background-color: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          padding: 0.3rem 0.65rem;
+          border-radius: 8px;
+          white-space: nowrap;
+        }
+
+        .mobile-card-divider {
+          height: 1px;
+          background-color: #f1f5f9;
+          margin: 0.85rem 0;
+        }
+
+        .mobile-winner-row {
+          display: flex;
+          align-items: center;
+          gap: 0.65rem;
+          margin-bottom: 0.85rem;
+        }
+
+        .mobile-details-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.75rem;
+          margin-bottom: 0.85rem;
+          background-color: #f8fafc;
+          padding: 0.65rem 0.75rem;
+          border-radius: 8px;
+        }
+
+        .mobile-detail-lbl {
+          display: block;
+          font-size: 0.72rem;
+          color: #64748b;
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+
+        .mobile-detail-val {
+          font-size: 0.82rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin-top: 0.15rem;
+        }
+
+        .mobile-card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 0.75rem;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .mobile-view-proof-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.45rem 0.75rem;
+          border-radius: 6px;
+          border: 1px solid #bfdbfe;
+          background-color: #eff6ff;
+          color: #1d4ed8;
+          font-size: 0.78rem;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
+        /* Lightbox */
+        .lightbox-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 99999;
+          padding: 1.5rem;
+        }
+
+        .lightbox-content {
+          position: relative;
+          max-width: 85vw;
+          max-height: 85vh;
+        }
+
+        .lightbox-img {
+          max-width: 100%;
+          max-height: 85vh;
+          object-fit: contain;
+          border-radius: 10px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .lightbox-close-btn {
+          position: absolute;
+          top: -15px;
+          right: -15px;
+          background-color: #ffffff;
+          color: #0f172a;
+          border: none;
+          border-radius: 50%;
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-weight: 900;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Spin animation for refresh icon */
+        .spin {
+          animation: spinAnimation 1s linear infinite;
+        }
+        @keyframes spinAnimation {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 1024px) {
+          .auction-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .conduct-form-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .auction-header-banner {
+            padding: 1.25rem 1.25rem;
+          }
+          .auction-title {
+            font-size: 1.5rem;
+          }
+          .form-row-2col {
+            grid-template-columns: 1fr;
+          }
+          .history-filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 1rem;
+          }
+          .history-controls {
+            flex-direction: column;
+            width: 100%;
+            gap: 0.75rem;
+          }
+          .history-filter-select,
+          .history-search-wrap,
+          .history-search-input {
+            width: 100% !important;
+          }
+          .hidden-on-mobile,
+          div.history-table-wrapper,
+          div:has(> table.history-table) {
+            display: none !important;
+          }
+          .history-mobile-cards {
+            display: flex !important;
+          }
+          .form-actions-bar {
+            justify-content: stretch;
+          }
+          .submit-auction-btn {
+            width: 100%;
+            justify-content: center;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .auction-stats-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.65rem !important;
+          }
+          .auction-stat-card {
+            padding: 0.75rem !important;
+            gap: 0.5rem !important;
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .stat-card-icon {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 8px !important;
+          }
+          .stat-card-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .stat-card-value {
+            font-size: 1.18rem !important;
+          }
+          .stat-card-label {
+            font-size: 0.68rem !important;
+          }
+          .stat-card-sub {
+            display: none !important;
+          }
+          .auction-nav-tabs {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+          }
+          .tab-btn {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 0.65rem 0.4rem !important;
+            font-size: 0.8rem !important;
+            text-align: center !important;
+            gap: 0.35rem !important;
+          }
+          .conduct-form {
+            padding: 1.25rem 0.85rem !important;
+          }
+          .conduct-card-header {
+            padding: 1rem 1rem !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .auction-header-banner {
+            padding: 1.15rem 1rem;
+          }
+          .auction-title {
+            font-size: 1.35rem;
+          }
+        }
+      `}</style>
     </div>
   );
 };

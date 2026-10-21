@@ -301,6 +301,16 @@ router.get('/chit/:chitId/matrix', protect, staff, async (req, res) => {
       return pay;
     });
 
+    const rawAuctions = await Auction.find({ chitId: chit.id })
+      .populate('winningMemberId', 'name email phone memberId profileImgUrl')
+      .sort({ monthNumber: 1 })
+      .lean();
+    chit.auctions = rawAuctions.map(a => ({
+      ...a,
+      id: a._id ? a._id.toString() : a.id,
+      winningMember: a.winningMemberId
+    }));
+
     res.json({ success: true, data: chit });
   } catch (error) {
     console.error('Error fetching chit payment matrix:', error);

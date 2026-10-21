@@ -1,4 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+/**
+ * NOTE: Customer/User Login page is currently commented out from active routing in App.jsx.
+ * Only Administrator & Staff login portal (/admin/login) is actively enabled.
+ */
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -169,7 +173,7 @@ const Login = () => {
     try {
       const loggedUser = await login(email, password);
       if (loggedUser && (loggedUser.role === 'superadmin' || loggedUser.role === 'employee')) {
-        navigate('/admin/chits');
+        navigate('/admin/dashboard');
       } else {
         navigate('/');
       }
@@ -206,7 +210,7 @@ const Login = () => {
     try {
       const res = await verifyOtp(email, otpVal);
       if (res?.user && (res.user.role === 'superadmin' || res.user.role === 'employee')) {
-        navigate('/admin/chits');
+        navigate('/admin/dashboard');
       } else {
         navigate('/');
       }

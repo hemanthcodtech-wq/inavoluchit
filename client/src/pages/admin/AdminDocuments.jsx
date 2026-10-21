@@ -453,6 +453,7 @@ const AdminDocuments = () => {
           <button
             type="button"
             onClick={() => openUploadModal()}
+            className="admin-docs-header-btn"
             style={{
               backgroundColor: '#2563eb',
               color: '#ffffff',
@@ -481,14 +482,14 @@ const AdminDocuments = () => {
           backgroundColor: '#ffffff',
           borderRadius: '1rem',
           border: '1px solid #e2e8f0',
-          padding: '1.25rem',
+          padding: 'clamp(0.85rem, 2.5vw, 1.25rem)',
           marginBottom: '1.5rem',
           boxShadow: '0 2px 10px rgba(0,0,0,0.02)'
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '1.25rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))',
+            gap: '1rem',
             alignItems: 'center'
           }}>
             
@@ -590,7 +591,7 @@ const AdminDocuments = () => {
         ) : (
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
             gap: '1.25rem'
           }}>
             {categories.map((cat) => {
@@ -602,7 +603,7 @@ const AdminDocuments = () => {
                     backgroundColor: '#ffffff',
                     borderRadius: '1rem',
                     border: '1px solid #e2e8f0',
-                    padding: '1.25rem',
+                    padding: 'clamp(0.85rem, 2.5vw, 1.25rem)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                     display: 'flex',
                     flexDirection: 'column',
@@ -618,7 +619,9 @@ const AdminDocuments = () => {
                       alignItems: 'center',
                       marginBottom: '1rem',
                       paddingBottom: '0.75rem',
-                      borderBottom: '1px solid #f1f5f9'
+                      borderBottom: '1px solid #f1f5f9',
+                      flexWrap: 'wrap',
+                      gap: '0.5rem'
                     }}>
                       <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>
                         {cat.title}
@@ -658,65 +661,35 @@ const AdminDocuments = () => {
                         No documents uploaded yet
                       </div>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {categoryDocs.map((doc) => (
                           <div
                             key={doc.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              padding: '0.75rem 0.85rem',
-                              borderRadius: '0.65rem',
-                              backgroundColor: '#f8fafc',
-                              border: '1px solid #e2e8f0',
-                              flexWrap: 'wrap',
-                              gap: '0.6rem'
-                            }}
+                            className="admin-doc-card-item"
                           >
                             {/* File Info */}
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <strong style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', display: 'block', wordBreak: 'break-word' }}>
+                            <div className="admin-doc-card-info">
+                              <strong className="admin-doc-card-title">
                                 {doc.title}
                               </strong>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.74rem', color: '#64748b', marginTop: '0.2rem' }}>
+                              <div className="admin-doc-card-meta">
                                 <span>{formatDate(doc.createdAt)}</span>
                                 <span>•</span>
                                 <span style={{ fontWeight: 700, color: '#334155' }}>{doc.fileType || 'JPEG'}</span>
                                 {doc.fileSize && <span>• {doc.fileSize}</span>}
-                                <span style={{
-                                  backgroundColor: '#e2e8f0',
-                                  color: '#475569',
-                                  fontSize: '0.68rem',
-                                  fontWeight: 700,
-                                  padding: '0.05rem 0.35rem',
-                                  borderRadius: '4px',
-                                  marginLeft: '0.2rem'
-                                }}>
+                                <span className="admin-doc-storage-badge">
                                   S3
                                 </span>
                               </div>
                             </div>
 
                             {/* Action Buttons */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                            <div className="admin-doc-card-actions">
                               <button
                                 type="button"
                                 onClick={() => setPreviewDoc(doc)}
                                 title="Preview"
-                                style={{
-                                  padding: '0.35rem 0.65rem',
-                                  borderRadius: '0.45rem',
-                                  border: '1px solid #cbd5e1',
-                                  backgroundColor: '#ffffff',
-                                  color: '#334155',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
+                                className="admin-doc-btn btn-preview"
                               >
                                 <Eye size={13} />
                                 <span>Preview</span>
@@ -726,19 +699,7 @@ const AdminDocuments = () => {
                                 type="button"
                                 onClick={() => handleDownload(doc)}
                                 title="Download"
-                                style={{
-                                  padding: '0.35rem 0.65rem',
-                                  borderRadius: '0.45rem',
-                                  border: '1px solid #cbd5e1',
-                                  backgroundColor: '#ffffff',
-                                  color: '#334155',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
+                                className="admin-doc-btn btn-download"
                               >
                                 <Download size={13} />
                                 <span>Download</span>
@@ -748,19 +709,7 @@ const AdminDocuments = () => {
                                 type="button"
                                 onClick={() => handleDeleteDoc(doc)}
                                 title="Delete"
-                                style={{
-                                  padding: '0.35rem 0.6rem',
-                                  borderRadius: '0.45rem',
-                                  border: '1px solid #fecaca',
-                                  backgroundColor: '#ffffff',
-                                  color: '#dc2626',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  cursor: 'pointer',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '0.25rem'
-                                }}
+                                className="admin-doc-btn btn-delete"
                               >
                                 <Trash2 size={13} />
                                 <span>Delete</span>
@@ -1049,6 +998,126 @@ const AdminDocuments = () => {
           </div>
         </div>
       )}
+
+      {/* Responsive Styles */}
+      <style>{`
+        .admin-doc-card-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.85rem 0.95rem;
+          border-radius: 0.75rem;
+          background-color: #f8fafc;
+          border: 1px solid #e2e8f0;
+          gap: 0.75rem;
+          box-sizing: border-box;
+          transition: all 0.15s ease;
+        }
+        .admin-doc-card-item:hover {
+          background-color: #ffffff;
+          border-color: #cbd5e1;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        .admin-doc-card-info {
+          flex: 1 1 auto;
+          min-width: 0;
+        }
+        .admin-doc-card-title {
+          font-size: 0.92rem;
+          font-weight: 700;
+          color: #0f172a;
+          display: block;
+          word-break: break-word;
+          line-height: 1.35;
+          margin-bottom: 0.25rem;
+        }
+        .admin-doc-card-meta {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          font-size: 0.74rem;
+          color: #64748b;
+          flex-wrap: wrap;
+        }
+        .admin-doc-storage-badge {
+          background-color: #e2e8f0;
+          color: #475569;
+          font-size: 0.68rem;
+          font-weight: 700;
+          padding: 0.05rem 0.35rem;
+          border-radius: 4px;
+          margin-left: 0.2rem;
+        }
+        .admin-doc-card-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          flex-shrink: 0;
+        }
+        .admin-doc-btn {
+          padding: 0.42rem 0.75rem;
+          border-radius: 0.45rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.3rem;
+          transition: all 0.15s ease;
+          white-space: nowrap;
+          box-sizing: border-box;
+        }
+        .admin-doc-btn.btn-preview,
+        .admin-doc-btn.btn-download {
+          border: 1px solid #cbd5e1;
+          background-color: #ffffff;
+          color: #334155;
+        }
+        .admin-doc-btn.btn-preview:hover,
+        .admin-doc-btn.btn-download:hover {
+          background-color: #f1f5f9;
+          border-color: #94a3b8;
+          color: #0f172a;
+        }
+        .admin-doc-btn.btn-delete {
+          border: 1px solid #fecaca;
+          background-color: #ffffff;
+          color: #dc2626;
+        }
+        .admin-doc-btn.btn-delete:hover {
+          background-color: #fee2e2;
+          border-color: #f87171;
+        }
+        @media (max-width: 640px) {
+          .admin-doc-card-item {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.65rem !important;
+            padding: 0.8rem 0.85rem !important;
+          }
+          .admin-doc-card-info {
+            width: 100% !important;
+          }
+          .admin-doc-card-actions {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 0.45rem !important;
+            padding-top: 0.65rem !important;
+            border-top: 1px solid #eef2f6 !important;
+          }
+          .admin-doc-btn {
+            width: 100% !important;
+            padding: 0.48rem 0.25rem !important;
+            font-size: 0.75rem !important;
+          }
+          .admin-docs-header-btn {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+      `}</style>
 
     </div>
   );
