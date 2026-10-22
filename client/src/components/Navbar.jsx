@@ -191,45 +191,72 @@ const Navbar = () => {
               </button>
             </div>
           ) : (
-            /* User Sign In and Register commented out
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginLeft: '0.5rem' }}>
               <Link
-                to="/login"
-                className="btn-secondary"
-                style={{ padding: '0.5rem 1.25rem', fontSize: '0.9rem', fontWeight: 700 }}
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/register"
+                to="/admin/login"
                 className="btn-primary"
-                style={{ padding: '0.5rem 1.35rem', fontSize: '0.9rem', fontWeight: 700 }}
+                style={{
+                  padding: '0.5rem 1.25rem',
+                  fontSize: '0.88rem',
+                  fontWeight: 700,
+                  borderRadius: '10px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap'
+                }}
               >
-                Register
+                <ShieldCheck size={16} />
+                <span>Admin Login</span>
               </Link>
             </div>
-            */
-            null
           )}
         </div>
 
-        {/* Hamburger Menu Icon */}
-        <button 
-          onClick={() => setIsOpen(true)} 
-          aria-label="Open Navigation Menu"
-          style={{ 
-            display: 'none', 
-            color: '#2563eb',
-            background: '#eff6ff',
-            border: '1.5px solid rgba(37, 99, 235, 0.2)',
-            borderRadius: '12px',
-            padding: '8px 10px',
-            cursor: 'pointer'
-          }} 
-          className="hamburger-btn"
-        >
-          <Menu size={26} />
-        </button>
+        {/* Mobile Action Controls */}
+        <div className="mobile-actions-container" style={{ display: 'none', alignItems: 'center', gap: '0.65rem' }}>
+          {!user && (
+            <Link
+              to="/admin/login"
+              className="btn-primary"
+              style={{
+                padding: '0.42rem 0.85rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <ShieldCheck size={14} />
+              <span>Admin</span>
+            </Link>
+          )}
+
+          {/* Hamburger Menu Icon */}
+          <button 
+            onClick={() => setIsOpen(true)} 
+            aria-label="Open Navigation Menu"
+            style={{ 
+              color: '#2563eb',
+              background: '#eff6ff',
+              border: '1.5px solid rgba(37, 99, 235, 0.2)',
+              borderRadius: '12px',
+              padding: '8px 10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }} 
+            className="hamburger-btn"
+          >
+            <Menu size={26} />
+          </button>
+        </div>
       </nav>
 
       {/* Mobile Drawer Backdrop & Slide-out Menu */}
@@ -594,26 +621,30 @@ const Navbar = () => {
                     <span>Contact Us</span>
                   </NavLink>
 
-                  {/* User Sign In and Register commented out
-                  <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
                     <Link
-                      to="/login"
-                      onClick={() => setIsOpen(false)}
-                      className="btn-secondary"
-                      style={{ textAlign: 'center', padding: '0.75rem', borderRadius: '10px', fontWeight: 700 }}
-                    >
-                      Sign In to Portal
-                    </Link>
-                    <Link
-                      to="/register"
+                      to="/admin/login"
                       onClick={() => setIsOpen(false)}
                       className="btn-primary"
-                      style={{ textAlign: 'center', padding: '0.75rem', borderRadius: '10px', fontWeight: 700 }}
+                      style={{
+                        width: '100%',
+                        textAlign: 'center',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '12px',
+                        fontWeight: 700,
+                        fontSize: '0.92rem',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)'
+                      }}
                     >
-                      Register New Account
+                      <ShieldCheck size={18} />
+                      <span>Admin Login</span>
                     </Link>
                   </div>
-                  */}
                 </div>
               )}
             </div>
@@ -747,6 +778,9 @@ const Navbar = () => {
           }
           .nav-links-desktop {
             display: none !important;
+          }
+          .mobile-actions-container {
+            display: flex !important;
           }
           .hamburger-btn {
             display: flex !important;
