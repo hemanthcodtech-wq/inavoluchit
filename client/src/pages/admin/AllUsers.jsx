@@ -476,7 +476,7 @@ const AllUsers = () => {
           </div>
 
           {/* Status Filter Buttons */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.85rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
               <Filter size={14} /> Filter:
             </span>

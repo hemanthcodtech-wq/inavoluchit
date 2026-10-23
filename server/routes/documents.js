@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -285,7 +286,8 @@ router.put('/:id', protect, staff, handleUpload, async (req, res) => {
     // Special handling for Registration KYC documents (Aadhaar & PAN)
     if (id.startsWith('reg-aadhar-')) {
       const userId = id.replace('reg-aadhar-', '');
-      const user = await User.findOne({ id: userId });
+      const user = (mongoose.Types.ObjectId.isValid(userId) ? await User.findById(userId) : null)
+        || await User.findOne({ id: userId });
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
@@ -333,7 +335,8 @@ router.put('/:id', protect, staff, handleUpload, async (req, res) => {
 
     if (id.startsWith('reg-pan-')) {
       const userId = id.replace('reg-pan-', '');
-      const user = await User.findOne({ id: userId });
+      const user = (mongoose.Types.ObjectId.isValid(userId) ? await User.findById(userId) : null)
+        || await User.findOne({ id: userId });
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }

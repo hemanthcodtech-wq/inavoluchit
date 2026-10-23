@@ -455,80 +455,96 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
     { num: 1, title: 'Official & Contact', desc: 'Name, Phone & Profile' },
     { num: 2, title: 'Address & Nominee', desc: 'Residential & Nominee' },
     { num: 3, title: 'KYC & Live Capture', desc: 'Aadhaar (Req), PAN & Pic' },
-    { num: 4, title: 'Security & Access', desc: 'Guarantor & Password' },
+    { num: 4, title: 'Portal Password', desc: 'Set Password & Activate' },
   ];
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.72)',
-      backdropFilter: 'blur(8px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '1.25rem',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '1.5rem',
-        width: '100%',
-        maxWidth: '1040px',
-        maxHeight: '94vh',
+    <div 
+      className="admin-modal-overlay"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(15, 23, 42, 0.72)',
+        backdropFilter: 'blur(8px)',
         display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 30px 70px -15px rgba(15, 23, 42, 0.45)',
-        border: '1px solid rgba(226, 232, 240, 0.8)',
-        overflow: 'hidden'
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999999,
+        padding: '1.25rem',
+        boxSizing: 'border-box'
       }}>
-        {/* Modal Top Header */}
-        <div style={{
-          padding: '1.35rem 2rem',
-          background: 'linear-gradient(135deg, #0a1f14 0%, #164e2e 50%, #1e3a8a 100%)',
-          color: '#ffffff',
+      <div 
+        className="admin-modal-card"
+        style={{
+          backgroundColor: '#ffffff',
+          borderRadius: '1.5rem',
+          width: '100%',
+          maxWidth: '1040px',
+          maxHeight: '94vh',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexShrink: 0
+          flexDirection: 'column',
+          boxShadow: '0 30px 70px -15px rgba(15, 23, 42, 0.45)',
+          border: '1px solid rgba(226, 232, 240, 0.8)',
+          overflow: 'hidden'
         }}>
-          <div>
+        {/* Modal Top Header */}
+        <div 
+          className="admin-modal-header"
+          style={{
+            padding: '1.35rem 2rem',
+            background: 'linear-gradient(135deg, #0a1f14 0%, #164e2e 50%, #1e3a8a 100%)',
+            color: '#ffffff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0
+          }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <div 
+                className="admin-modal-header-icon"
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
                 <User size={22} color="#fcd34d" />
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <h2 
+                    className="admin-modal-header-title"
+                    style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff', lineHeight: 1.25 }}>
                     New Member Onboarding
                   </h2>
-                  <span style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    backgroundColor: 'rgba(252, 211, 77, 0.2)',
-                    color: '#fcd34d',
-                    padding: '0.2rem 0.65rem',
-                    borderRadius: '9999px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    border: '1px solid rgba(252, 211, 77, 0.3)'
-                  }}>
+                  <span 
+                    className="admin-modal-header-badge"
+                    style={{
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      backgroundColor: 'rgba(252, 211, 77, 0.2)',
+                      color: '#fcd34d',
+                      padding: '0.15rem 0.6rem',
+                      borderRadius: '9999px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      border: '1px solid rgba(252, 211, 77, 0.3)',
+                      whiteSpace: 'nowrap'
+                    }}>
                     Official Admin Entry
                   </span>
                 </div>
-                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#e2e8f0' }}>
+                <p 
+                  className="admin-modal-header-desc"
+                  style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#e2e8f0' }}>
                   Register member with official contact, residential address, KYC (Aadhaar Mandatory, PAN Optional), and user live photo.
                 </p>
               </div>
@@ -549,6 +565,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
               transition: 'background 0.2s'
             }}
             onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
@@ -559,20 +576,23 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
         </div>
 
         {/* Stepper Progress Bar */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          backgroundColor: '#f8fafc',
-          borderBottom: '1px solid #e2e8f0',
-          padding: '0.85rem 2rem',
-          gap: '1rem'
-        }}>
+        <div 
+          className="admin-modal-stepper"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            backgroundColor: '#f8fafc',
+            borderBottom: '1px solid #e2e8f0',
+            padding: '0.85rem 2rem',
+            gap: '1rem'
+          }}>
           {stepsList.map(step => {
             const isActive = currentStep === step.num;
             const isDone = currentStep > step.num;
             return (
               <div 
                 key={step.num}
+                className={`admin-modal-step-item ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
                 onClick={() => {
                   if (isDone) setCurrentStep(step.num);
                 }}
@@ -585,27 +605,33 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                   transition: 'opacity 0.2s'
                 }}
               >
-                <div style={{
-                  width: '30px',
-                  height: '30px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.82rem',
-                  fontWeight: 800,
-                  backgroundColor: isDone ? '#16a34a' : (isActive ? '#2563eb' : '#cbd5e1'),
-                  color: '#ffffff',
-                  boxShadow: isActive ? '0 0 0 4px rgba(37, 99, 235, 0.2)' : 'none',
-                  flexShrink: 0
-                }}>
+                <div 
+                  className="admin-modal-step-circle"
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    backgroundColor: isDone ? '#16a34a' : (isActive ? '#2563eb' : '#cbd5e1'),
+                    color: '#ffffff',
+                    boxShadow: isActive ? '0 0 0 4px rgba(37, 99, 235, 0.2)' : 'none',
+                    flexShrink: 0
+                  }}>
                   {isDone ? <Check size={16} /> : step.num}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: isActive ? '#1e3a8a' : (isDone ? '#166534' : '#475569'), whiteSpace: 'nowrap' }}>
+                  <div 
+                    className="admin-modal-step-title"
+                    style={{ fontSize: '0.85rem', fontWeight: 800, color: isActive ? '#1e3a8a' : (isDone ? '#166534' : '#475569'), whiteSpace: 'nowrap' }}>
                     {step.title}
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <div 
+                    className="admin-modal-step-desc"
+                    style={{ fontSize: '0.72rem', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {step.desc}
                   </div>
                 </div>
@@ -616,14 +642,16 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
 
         {/* Modal Main Form Body */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-          <div style={{
-            padding: '1.75rem 2rem',
-            overflowY: 'auto',
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem'
-          }}>
+          <div 
+            className="admin-modal-body"
+            style={{
+              padding: '1.75rem 2rem',
+              overflowY: 'auto',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
 
             {error && (
               <div style={{
@@ -662,17 +690,19 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
             )}
 
             {/* Auto-Generated Member ID Badge & Quick Switch */}
-            <div style={{
-              padding: '0.9rem 1.25rem',
-              background: 'linear-gradient(to right, #eff6ff, #f8fafc)',
-              borderRadius: '0.85rem',
-              border: '1.5px solid #bfdbfe',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '0.85rem'
-            }}>
+            <div 
+              className="admin-modal-id-card"
+              style={{
+                padding: '0.9rem 1.25rem',
+                background: 'linear-gradient(to right, #eff6ff, #f8fafc)',
+                borderRadius: '0.85rem',
+                border: '1.5px solid #bfdbfe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.85rem'
+              }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <ShieldCheck size={17} color="#2563eb" />
@@ -710,7 +740,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <div className="admin-modal-id-card-actions" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={fetchNextMemberId}
@@ -768,8 +798,10 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     </h3>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
-                    <div style={{ gridColumn: 'span 2' }}>
+                  <div 
+                    className="admin-modal-grid-step1"
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.25rem' }}>
+                    <div className="admin-modal-span-2" style={{ gridColumn: 'span 2' }}>
                       <label style={labelStyle}>Full Official Name (As on Aadhaar) *</label>
                       <input
                         type="text"
@@ -876,7 +908,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     </h3>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.15rem' }}>
+                  <div 
+                    className="admin-modal-grid-step2"
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.15rem' }}>
                     <div style={{ gridColumn: '1 / -1' }}>
                       <label style={labelStyle}>Door No, Street & Area Address *</label>
                       <textarea
@@ -953,7 +987,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Can be updated anytime later</span>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.15rem' }}>
+                  <div 
+                    className="admin-modal-grid-step2"
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.15rem' }}>
                     <div>
                       <label style={labelStyle}>Nominee Name</label>
                       <input
@@ -1034,7 +1070,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                   </div>
 
                   {/* 3 Upload/Capture Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.35rem' }}>
+                  <div 
+                    className="admin-modal-kyc-grid"
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.35rem' }}>
                     
                     {/* 1. USER PROFILE PHOTO (Upload or Live Camera) */}
                     <div style={proofCardStyle}>
@@ -1240,110 +1278,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
               </div>
             )}
 
-            {/* STEP 4: GUARANTOR / SECURITY & TEMPORARY PASSWORD */}
+            {/* STEP 4: MEMBER PORTAL PASSWORD & ACTIVATION */}
             {currentStep === 4 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Guarantor Details */}
-                <div style={{
-                  padding: '1.25rem',
-                  borderRadius: '1rem',
-                  border: '1px solid #e2e8f0',
-                  backgroundColor: '#ffffff'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.15rem', paddingBottom: '0.75rem', borderBottom: '1px solid #f1f5f9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ width: '26px', height: '26px', borderRadius: '50%', backgroundColor: '#2563eb', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', fontWeight: 800 }}>4A</div>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                        Guarantor & Security Particulars
-                      </h3>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>Guarantor Required:</span>
-                      <select
-                        value={guarantorRequired}
-                        onChange={(e) => setGuarantorRequired(e.target.value)}
-                        style={{
-                          padding: '0.3rem 0.75rem',
-                          borderRadius: '0.45rem',
-                          border: '1px solid #cbd5e1',
-                          fontSize: '0.82rem',
-                          fontWeight: 700,
-                          backgroundColor: guarantorRequired === 'Yes' ? '#e0f2fe' : '#ffffff',
-                          color: guarantorRequired === 'Yes' ? '#0369a1' : '#334155'
-                        }}
-                      >
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {guarantorRequired === 'Yes' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.15rem' }}>
-                      <div>
-                        <label style={labelStyle}>Guarantor Full Name *</label>
-                        <input
-                          type="text"
-                          value={guarantorName}
-                          onChange={(e) => setGuarantorName(e.target.value)}
-                          placeholder="Guarantor name"
-                          style={inputStyle}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Relationship with Member</label>
-                        <input
-                          type="text"
-                          value={guarantorRelationship}
-                          onChange={(e) => setGuarantorRelationship(e.target.value)}
-                          placeholder="Friend / Relative / Colleague"
-                          style={inputStyle}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Guarantor Mobile Number</label>
-                        <input
-                          type="tel"
-                          maxLength={10}
-                          value={guarantorPhone}
-                          onChange={(e) => setGuarantorPhone(e.target.value.replace(/\D/g, ''))}
-                          placeholder="10-digit number"
-                          style={inputStyle}
-                        />
-                      </div>
-
-                      <div>
-                        <label style={labelStyle}>Security Instrument Type</label>
-                        <select
-                          value={securityType}
-                          onChange={(e) => setSecurityType(e.target.value)}
-                          style={inputStyle}
-                        >
-                          <option value="Cheque">Signed Cheque</option>
-                          <option value="Property">Property Documents</option>
-                          <option value="Promissory Note">Promissory Note</option>
-                          <option value="Gold">Gold Deposit</option>
-                          <option value="Salary Slip">Salary Certificate</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <label style={labelStyle}>Guarantor Residential Address</label>
-                        <input
-                          type="text"
-                          value={guarantorAddress}
-                          onChange={(e) => setGuarantorAddress(e.target.value)}
-                          placeholder="Complete address of guarantor"
-                          style={inputStyle}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Temporary Password & Account Activation */}
                 <div style={{
                   padding: '1.35rem',
@@ -1362,7 +1299,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                   </p>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <div style={{ position: 'relative', width: '280px' }}>
+                    <div style={{ position: 'relative', flex: '1 1 200px', minWidth: '180px', maxWidth: '100%' }}>
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
@@ -1440,15 +1377,17 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
           </div>
 
           {/* Modal Bottom Actions Footer */}
-          <div style={{
-            padding: '1.15rem 2rem',
-            borderTop: '1px solid #e2e8f0',
-            backgroundColor: '#ffffff',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexShrink: 0
-          }}>
+          <div 
+            className="admin-modal-footer"
+            style={{
+              padding: '1.15rem 2rem',
+              borderTop: '1px solid #e2e8f0',
+              backgroundColor: '#ffffff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexShrink: 0
+            }}>
             <div>
               {currentStep > 1 && (
                 <button
@@ -1554,43 +1493,47 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
 
         {/* Live Camera Stream Overlay Modal */}
         {cameraActiveTarget && (
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.88)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '1.5rem',
-            boxSizing: 'border-box'
-          }}>
+          <div 
+            className="admin-modal-camera-overlay"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0, 0, 0, 0.88)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10000,
+              padding: '0.5rem',
+              boxSizing: 'border-box'
+            }}>
             <div style={{
               width: '100%',
-              maxWidth: '560px',
+              maxWidth: '520px',
               backgroundColor: '#111827',
               borderRadius: '1.25rem',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
-              border: '1px solid rgba(255, 255, 255, 0.1)'
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              maxHeight: '92vh'
             }}>
               <div style={{
-                padding: '0.85rem 1.25rem',
+                padding: '0.75rem 1rem',
                 backgroundColor: '#1f2937',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                color: '#ffffff'
+                color: '#ffffff',
+                flexShrink: 0
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Camera size={18} color="#60a5fa" />
-                  <span style={{ fontWeight: 700, fontSize: '0.92rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>
                     {cameraActiveTarget === 'photo' ? 'Capture Member Live Photo' : (cameraActiveTarget === 'aadhar' ? 'Scan Aadhaar Document' : 'Scan PAN Document')}
                   </span>
                 </div>
@@ -1603,7 +1546,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                 </button>
               </div>
 
-              <div style={{ position: 'relative', width: '100%', height: '360px', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: '100%', height: 'min(300px, 45vh)', backgroundColor: '#000000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {cameraError ? (
                   <div style={{ color: '#ef4444', padding: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
                     <AlertCircle size={32} style={{ margin: '0 auto 0.75rem auto', display: 'block' }} />
@@ -1625,31 +1568,34 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
               </div>
 
               <div style={{
-                padding: '1rem 1.25rem',
+                padding: '0.75rem 1rem',
                 backgroundColor: '#1f2937',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                flexShrink: 0
               }}>
                 <button
                   type="button"
                   onClick={() => startCamera(cameraActiveTarget, cameraFacingMode === 'user' ? 'environment' : 'user')}
                   style={{
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.4rem',
-                    background: 'rgba(255, 255, 255, 0.1)',
+                    gap: '0.35rem',
+                    background: 'rgba(255, 255, 255, 0.12)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
                     color: '#ffffff',
-                    padding: '0.5rem 0.85rem',
+                    padding: '0.45rem 0.75rem',
                     borderRadius: '0.5rem',
-                    fontSize: '0.82rem',
+                    fontSize: '0.8rem',
                     fontWeight: 600,
                     cursor: 'pointer'
                   }}
                 >
-                  <RotateCw size={15} />
-                  <span>Switch Camera</span>
+                  <RotateCw size={14} />
+                  <span>Switch</span>
                 </button>
 
                 <button
@@ -1657,21 +1603,21 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                   onClick={captureSnapshot}
                   disabled={Boolean(cameraError)}
                   style={{
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
+                    gap: '0.45rem',
                     backgroundColor: '#2563eb',
                     color: '#ffffff',
                     border: 'none',
-                    padding: '0.65rem 1.75rem',
+                    padding: '0.55rem 1.25rem',
                     borderRadius: '9999px',
-                    fontSize: '0.92rem',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
                     cursor: cameraError ? 'not-allowed' : 'pointer',
                     boxShadow: '0 4px 12px rgba(37, 99, 235, 0.4)'
                   }}
                 >
-                  <Camera size={18} />
+                  <Camera size={16} />
                   <span>Capture Photo</span>
                 </button>
 
@@ -1683,7 +1629,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     border: 'none',
                     color: '#9ca3af',
                     fontSize: '0.85rem',
-                    cursor: 'pointer'
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '0.4rem 0.6rem'
                   }}
                 >
                   Cancel

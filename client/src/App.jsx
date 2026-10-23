@@ -95,7 +95,7 @@ const MainLayout = () => {
         '/admin/employees': 'Employee Management',
         '/admin/chit-approvals': 'Chit Approvals',
         '/admin/payments': 'Verify Payments',
-        '/admin/payment-history': 'Payment History',
+        '/admin/payment-history': 'Payment Records',
         '/admin/records': 'System Records',
         '/admin/audit-log': 'Audit Log',
         '/profile': 'My Profile'

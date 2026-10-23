@@ -61,9 +61,9 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
     }
   };
 
-  const fetchDuesSummary = async () => {
+  const fetchDuesSummary = async (options = {}) => {
     if (!chitId) return;
-    setLoading(true);
+    if (!options.silent) setLoading(true);
     setError('');
 
     try {
@@ -73,7 +73,7 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
       const data = await res.json();
       if (data.success && data.data) {
         setDuesData(data.data);
-        if (data.data.chit?.currentMonth) {
+        if (!options.preserveMonth && !selectedMonth && data.data.chit?.currentMonth) {
           setSelectedMonth(data.data.chit.currentMonth);
         }
       } else {
@@ -114,7 +114,8 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
 
   // Selected month calculations
   const monthConfig = (chit?.monthlyDues || []).find((d) => d.monthNumber === selectedMonth);
-  const baseDueForMonth = monthConfig ? monthConfig.dueAmount : (chit?.monthlyContribution || 0);
+  const isMonthConfigured = Boolean(monthConfig);
+  const baseDueForMonth = isMonthConfigured ? Number(monthConfig.dueAmount || 0) : 0;
 
   // Compute month totals
   let totalMonthExpected = 0;
@@ -125,20 +126,20 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
   members.forEach((m) => {
     const mData = m.months?.find((x) => x.monthNumber === selectedMonth);
     const slots = m.slotsCount || 1;
-    const due = mData?.totalDue ?? (slots * baseDueForMonth);
+    const due = isMonthConfigured ? (mData?.totalDue ?? (slots * baseDueForMonth)) : 0;
     const paid = mData?.amountPaid ?? 0;
 
     totalMonthExpected += due;
     totalMonthCollected += paid;
 
-    if (mData?.isPaid) {
+    if (isMonthConfigured && mData?.isPaid) {
       fullyPaidMembersCount++;
-    } else if (mData?.isPartial) {
+    } else if (isMonthConfigured && mData?.isPartial) {
       partialPaidMembersCount++;
     }
   });
 
-  const totalMonthOutstanding = Math.max(0, totalMonthExpected - totalMonthCollected);
+  const totalMonthOutstanding = isMonthConfigured ? Math.max(0, totalMonthExpected - totalMonthCollected) : 0;
   const collectionPercentage = totalMonthExpected > 0 ? Math.min(100, Math.round((totalMonthCollected / totalMonthExpected) * 100)) : 0;
 
   // Filtered members by search query
@@ -280,13 +281,13 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                   </div>
                 </div>
                 <div className="chit-metric-val">
-                  ₹{baseDueForMonth.toLocaleString()}
+                  {isMonthConfigured ? `₹${baseDueForMonth.toLocaleString()}` : <span style={{ color: '#d97706', fontSize: '1.35rem' }}>Not Set</span>}
                 </div>
                 <div className="chit-metric-sub">
-                  {monthConfig ? (
+                  {isMonthConfigured ? (
                     <span style={{ color: '#16a34a', fontWeight: 700 }}>● Custom monthly due set by admin</span>
                   ) : (
-                    <span style={{ color: '#64748b' }}>Standard default monthly installment</span>
+                    <span style={{ color: '#b45309', fontWeight: 600 }}>Installment due not configured yet</span>
                   )}
                 </div>
               </div>
@@ -314,8 +315,8 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                 </div>
 
                 <div className="chit-metric-sub flex-between">
-                  <span>{fullyPaidMembersCount} of {members.length} members paid</span>
-                  <span style={{ fontWeight: 800, color: '#16a34a' }}>{collectionPercentage}%</span>
+                  <span>{isMonthConfigured ? `${fullyPaidMembersCount} of ${members.length} members paid` : 'Advance / ad-hoc payments'}</span>
+                  {isMonthConfigured && <span style={{ fontWeight: 800, color: '#16a34a' }}>{collectionPercentage}%</span>}
                 </div>
               </div>
 
@@ -330,15 +331,63 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                   </div>
                 </div>
                 <div className="chit-metric-val text-red">
-                  ₹{totalMonthOutstanding.toLocaleString()}
+                  {isMonthConfigured ? `₹${totalMonthOutstanding.toLocaleString()}` : <span style={{ color: '#64748b' }}>₹0</span>}
                 </div>
                 <div className="chit-metric-sub">
-                  Expected pool: <strong style={{ color: '#0f172a' }}>₹{totalMonthExpected.toLocaleString()}</strong>
+                  {isMonthConfigured ? (
+                    <>Expected pool: <strong style={{ color: '#0f172a' }}>₹{totalMonthExpected.toLocaleString()}</strong></>
+                  ) : (
+                    <span style={{ color: '#64748b' }}>No due scheduled for Month {selectedMonth}</span>
+                  )}
                 </div>
               </div>
 
             </div>
           </div>
+
+          {/* Notice banner if due is not set for selected month */}
+          {!isMonthConfigured && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.65rem',
+              padding: '0.85rem 1.15rem',
+              borderRadius: '12px',
+              backgroundColor: '#fffbeb',
+              border: '1.5px solid #fde68a',
+              margin: '0 1.25rem 0.5rem 1.25rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', color: '#92400e', fontSize: '0.86rem' }}>
+                <AlertCircle size={17} color="#d97706" style={{ flexShrink: 0 }} />
+                <span>
+                  Due installment has <strong>not been scheduled</strong> for <strong>{formatChitMonthYear(chit, selectedMonth)} (Month {selectedMonth})</strong>. Remaining balance is ₹0 until configured.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSetDueOpen(true)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.5rem 0.95rem',
+                  backgroundColor: '#d97706',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(217, 119, 6, 0.25)'
+                }}
+              >
+                <Sliders size={13} />
+                <span>Set Due for Month {selectedMonth}</span>
+              </button>
+            </div>
+          )}
 
           {/* Members Table Section */}
           <div className="chit-dues-body">
@@ -456,7 +505,13 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
 
                           {/* Month Due */}
                           <td className="td-bold">
-                            ₹{(mData.totalDue || 0).toLocaleString()}
+                            {isMonthConfigured ? (
+                              `₹${(mData.totalDue || 0).toLocaleString()}`
+                            ) : (
+                              <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 600, fontSize: '0.85rem' }}>
+                                Not Set
+                              </span>
+                            )}
                           </td>
 
                           {/* Amount Paid */}
@@ -466,19 +521,31 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
 
                           {/* Remaining Due */}
                           <td>
-                            {isFullyPaid ? (
-                              <span className="td-pill pill-paid">
-                                <CheckCircle2 size={12} />
-                                <span>Fully Paid</span>
-                              </span>
-                            ) : isPartial ? (
-                              <span className="td-pill pill-partial">
-                                <span>₹{(mData.remainingDue || 0).toLocaleString()} Due</span>
-                              </span>
+                            {isMonthConfigured ? (
+                              isFullyPaid ? (
+                                <span className="td-pill pill-paid">
+                                  <CheckCircle2 size={12} />
+                                  <span>Fully Paid</span>
+                                </span>
+                              ) : isPartial ? (
+                                <span className="td-pill pill-partial">
+                                  <span>₹{(mData.remainingDue || 0).toLocaleString()} Due</span>
+                                </span>
+                              ) : (
+                                <span className="td-pill pill-due">
+                                  <span>₹{(mData.remainingDue || 0).toLocaleString()} Due</span>
+                                </span>
+                              )
                             ) : (
-                              <span className="td-pill pill-due">
-                                <span>₹{(mData.remainingDue || 0).toLocaleString()} Due</span>
-                              </span>
+                              (mData.amountPaid || 0) > 0 ? (
+                                <span className="td-pill pill-paid" style={{ backgroundColor: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+                                  <span>Paid ₹{(mData.amountPaid || 0).toLocaleString()} (Adv)</span>
+                                </span>
+                              ) : (
+                                <span className="td-pill" style={{ backgroundColor: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>
+                                  <span>Due Not Set</span>
+                                </span>
+                              )
                             )}
                           </td>
 
@@ -593,8 +660,10 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
           isOpen={isSetDueOpen}
           onClose={() => setIsSetDueOpen(false)}
           chit={chit}
-          onDueUpdated={() => {
-            fetchDuesSummary();
+          initialMonth={selectedMonth}
+          members={members}
+          onDueUpdated={(updatedChit) => {
+            fetchDuesSummary({ preserveMonth: true, silent: true });
             if (onChitUpdated) onChitUpdated();
           }}
         />

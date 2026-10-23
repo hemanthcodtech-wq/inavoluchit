@@ -17,7 +17,8 @@ import {
   User,
   ShieldCheck,
   ChevronRight,
-  Coins
+  Coins,
+  CreditCard
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
@@ -44,6 +45,7 @@ const MobileHeader = () => {
   const adminLinks = [
     { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={20} /> },
+    { to: '/admin/payment-history', label: 'Payment Records', icon: <CreditCard size={20} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={20} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={20} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={20} /> },
@@ -54,6 +56,7 @@ const MobileHeader = () => {
   const staffLinks = [
     { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={20} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={20} /> },
+    { to: '/admin/payment-history', label: 'Payment Records', icon: <CreditCard size={20} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={20} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={20} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={20} /> },

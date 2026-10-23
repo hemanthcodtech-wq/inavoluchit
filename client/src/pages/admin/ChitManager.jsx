@@ -1416,7 +1416,14 @@ const ChitManager = () => {
           isOpen={Boolean(selectedChitForSetDue)}
           onClose={() => setSelectedChitForSetDue(null)}
           chit={selectedChitForSetDue}
-          onDueUpdated={() => fetchChits()}
+          initialMonth={selectedChitForSetDue.currentMonth}
+          members={selectedChitForSetDue.members}
+          onDueUpdated={(updatedChit) => {
+            if (updatedChit) {
+              setSelectedChitForSetDue(prev => prev ? { ...prev, ...updatedChit } : updatedChit);
+            }
+            fetchChits();
+          }}
         />
       )}
 

@@ -18,7 +18,8 @@ import {
   Gavel,
   Users,
   FileText,
-  Coins
+  Coins,
+  CreditCard
 } from 'lucide-react';
 import logoImg from '../assets/logo.png';
 
@@ -43,6 +44,7 @@ const Sidebar = () => {
   const adminLinks = [
     { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={21} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={21} /> },
+    { to: '/admin/payment-history', label: 'Payment Records', icon: <CreditCard size={21} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={21} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={21} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={21} /> },
@@ -52,6 +54,7 @@ const Sidebar = () => {
   const staffLinks = [
     { to: '/admin/dashboard', label: 'Overview', icon: <LayoutDashboard size={21} /> },
     { to: '/admin/all-users', label: 'All Users', icon: <Users size={21} /> },
+    { to: '/admin/payment-history', label: 'Payment Records', icon: <CreditCard size={21} /> },
     { to: '/admin/documents', label: 'Chit Documents', icon: <FolderCheck size={21} /> },
     { to: '/admin/chit-plans', label: 'Chit Plans', icon: <Coins size={21} /> },
     { to: '/admin/chits', label: 'Chit Schemes', icon: <Briefcase size={21} /> },

@@ -242,11 +242,13 @@ router.get('/users/approved', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.post('/users/:id/revoke', protect, admin, async (req, res) => {
   try {
-    const user = await User.findOne({ id: req.params.id });
+    const user = (mongoose.Types.ObjectId.isValid(req.params.id) ? await User.findById(req.params.id) : null)
+      || await User.findOne({ id: req.params.id })
+      || await User.findOne({ memberId: req.params.id });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    await User.findByIdAndUpdate(user.id, { isApproved: false });
+    await User.findByIdAndUpdate(user._id || user.id, { isApproved: false });
 
     await logAuditEvent({
       req,
@@ -271,7 +273,9 @@ router.post('/users/:id/revoke', protect, admin, async (req, res) => {
 router.delete('/users/:id', protect, admin, async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = await User.findOne({ id: userId });
+    const user = (mongoose.Types.ObjectId.isValid(userId) ? await User.findById(userId) : null)
+      || await User.findOne({ id: userId })
+      || await User.findOne({ memberId: userId });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -329,7 +333,9 @@ router.post('/users/:id/verify', protect, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid action. Specify approve or reject.' });
     }
 
-    const user = await User.findOne({ id: req.params.id });
+    const user = (mongoose.Types.ObjectId.isValid(req.params.id) ? await User.findById(req.params.id) : null)
+      || await User.findOne({ id: req.params.id })
+      || await User.findOne({ memberId: req.params.id });
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -801,7 +807,9 @@ router.get('/users-records', protect, staff, async (req, res) => {
 router.get('/users-records/:userId', protect, staff, async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await User.findOne({ id: userId });
+    const user = (mongoose.Types.ObjectId.isValid(userId) ? await User.findById(userId) : null)
+      || await User.findOne({ id: userId })
+      || await User.findOne({ memberId: userId });
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
@@ -1002,10 +1010,95 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       details: `Configured Month ${mNum} payable due to ₹${amount} for chit "${chit.name}"`
     });
 
+    // Fetch all approved enrolled members for WhatsApp broadcast notification
+    const enrolledMembersRaw = await ChitMember.find({ chitId: chit._id, status: 'approved' })
+      .populate('userId', 'name email phone whatsappNumber memberId')
+      .lean();
+
+    const monthDateObj = dueDate ? new Date(dueDate) : null;
+    const monthName = monthDateObj && !isNaN(monthDateObj.getTime())
+      ? monthDateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : `Month ${mNum}`;
+    const dueDateStr = monthDateObj && !isNaN(monthDateObj.getTime())
+      ? monthDateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : '5th of this month';
+    const formattedAmount = Number(amount).toLocaleString('en-IN');
+
+    // Group members by unique user so users with multiple slots receive a consolidated notice
+    const userSlotMap = {};
+    enrolledMembersRaw.forEach(m => {
+      if (!m.userId) return;
+      const uId = m.userId._id ? m.userId._id.toString() : m.userId.toString();
+      if (!userSlotMap[uId]) {
+        userSlotMap[uId] = {
+          userId: m.userId,
+          slotsCount: 0,
+          ticketIds: []
+        };
+      }
+      userSlotMap[uId].slotsCount++;
+      if (m.ticketId) userSlotMap[uId].ticketIds.push(m.ticketId);
+    });
+
+    const enrolledMembers = Object.keys(userSlotMap).map(uId => {
+      const item = userSlotMap[uId];
+      const u = item.userId || {};
+      const rawPhone = u.whatsappNumber || u.phone || '';
+      const cleanDigits = rawPhone.replace(/\D/g, '');
+      const phone10 = cleanDigits.slice(-10);
+      const memberName = u.name || 'Member';
+      const slotLabel = item.slotsCount === 1 
+        ? (item.ticketIds[0] || '1 Slot') 
+        : `${item.slotsCount} Slots (${item.ticketIds.join(', ') || 'Enrolled'})`;
+      const memberTotalAmount = amount * item.slotsCount;
+      const formattedMemberAmount = Number(memberTotalAmount).toLocaleString('en-IN');
+
+      const whatsappText = `🔔 *INAVOLU CHIT FUNDS - PAYMENT DUE NOTICE* 🔔\n\n` +
+        `Dear *${memberName}*,\n\n` +
+        `The monthly installment for your chit scheme has been scheduled:\n\n` +
+        `📋 *Scheme:* ${chit.name}\n` +
+        `🎫 *Member Slot:* ${slotLabel}\n` +
+        `🗓 *Installment:* Month ${mNum} (${monthName})\n` +
+        `💰 *Payable Due:* ₹${formattedMemberAmount}\n` +
+        `📅 *Due Date:* ${dueDateStr}\n` +
+        (notes ? `📝 *Note:* ${notes}\n` : '') +
+        `\n` +
+        `Please pay on or before the due date to keep your chit account active.\n\n` +
+        `📱 *Pay online / Check ledger:*\n` +
+        `https://inavoluchit.netlify.app/dashboard\n\n` +
+        `Thank you,\n` +
+        `*InaVolu Chit Funds Private Limited*`;
+
+      return {
+        id: u._id ? u._id.toString() : uId,
+        memberId: u.memberId || (item.ticketIds[0] || 'MEMBER'),
+        ticketId: item.ticketIds.join(', ') || slotLabel,
+        slotsCount: item.slotsCount,
+        name: memberName,
+        phone: phone10 ? `91${phone10}` : '',
+        displayPhone: rawPhone,
+        email: u.email || '',
+        amount: memberTotalAmount,
+        whatsappText
+      };
+    }).filter(m => m.phone);
+
     res.json({
       success: true,
       message: `Monthly due for Month ${mNum} set to ₹${amount.toLocaleString()} successfully!`,
-      data: chit
+      data: {
+        ...chit.toObject(),
+        id: chit._id.toString(),
+        _id: chit._id.toString()
+      },
+      enrolledMembers,
+      dueDetails: {
+        monthNumber: mNum,
+        monthName,
+        dueAmount: amount,
+        dueDate: dueDateStr,
+        notes
+      }
     });
   } catch (error) {
     console.error('Error setting monthly due:', error);
@@ -1055,21 +1148,27 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
       const monthsData = [];
       for (let m = 1; m <= duration; m++) {
         const config = duesConfig.find(d => d.monthNumber === m);
-        const baseDue = config ? config.dueAmount : chit.monthlyContribution;
-        const totalDue = baseDue * item.slotsCount;
+        const isConfigured = Boolean(config);
+        const baseDue = isConfigured ? Number(config.dueAmount || 0) : 0;
+        const totalDue = isConfigured ? (baseDue * item.slotsCount) : 0;
 
         const monthPayments = userPayments.filter(p => p.monthNumber === m);
         const amountPaid = monthPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-        const remainingDue = Math.max(0, totalDue - amountPaid);
+        const remainingDue = isConfigured ? Math.max(0, totalDue - amountPaid) : 0;
+        const isPaid = isConfigured ? (totalDue > 0 && remainingDue === 0) : (amountPaid > 0);
+        const isPartial = isConfigured && amountPaid > 0 && remainingDue > 0;
 
         monthsData.push({
           monthNumber: m,
+          isConfigured,
+          dueDate: config?.dueDate || null,
+          notes: config?.notes || '',
           baseDue,
           totalDue,
           amountPaid,
           remainingDue,
-          isPaid: remainingDue === 0,
-          isPartial: amountPaid > 0 && remainingDue > 0,
+          isPaid,
+          isPartial,
           payments: monthPayments.map(p => ({
             id: p._id.toString(),
             amount: p.amount,
@@ -1095,6 +1194,7 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
       data: {
         chit: {
           id: chit._id.toString(),
+          _id: chit._id.toString(),
           name: chit.name,
           chitValue: chit.chitValue,
           durationMonths: chit.durationMonths,
@@ -1222,7 +1322,8 @@ router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), 
 
     // Calculate updated due breakdown for this user & month
     const userSlots = await ChitMember.countDocuments({ chitId: chit._id, userId: user._id, status: 'approved' }) || 1;
-    const configuredDue = (chit.monthlyDues || []).find(d => d.monthNumber === mNum)?.dueAmount || chit.monthlyContribution;
+    const configObj = (chit.monthlyDues || []).find(d => d.monthNumber === mNum);
+    const configuredDue = configObj ? Number(configObj.dueAmount || 0) : 0;
     const totalDue = configuredDue * userSlots;
 
     const allApprovedPayments = await Payment.find({
@@ -1479,12 +1580,13 @@ router.post('/employees', protect, admin, async (req, res) => {
 // @access  Private/Admin
 router.delete('/employees/:id', protect, admin, async (req, res) => {
   try {
-    const employee = await User.findOne({ id: req.params.id });
+    const employee = (mongoose.Types.ObjectId.isValid(req.params.id) ? await User.findById(req.params.id) : null)
+      || await User.findOne({ id: req.params.id });
     if (!employee || employee.role !== 'employee') {
       return res.status(404).json({ success: false, message: 'Employee not found' });
     }
 
-    await User.findByIdAndDelete(req.params.id);
+    await User.findByIdAndDelete(employee._id || employee.id);
     res.json({ success: true, message: 'Employee deleted successfully' });
   } catch (error) {
     console.error('Error deleting employee:', error);
@@ -1500,7 +1602,8 @@ router.put('/chits/:chitId/assign', protect, admin, async (req, res) => {
     const { employeeId } = req.body; // Can be null to unassign
     
     if (employeeId) {
-      const employee = await User.findOne({ id: employeeId });
+      const employee = (mongoose.Types.ObjectId.isValid(employeeId) ? await User.findById(employeeId) : null)
+        || await User.findOne({ id: employeeId });
       if (!employee || employee.role !== 'employee') {
         return res.status(400).json({ success: false, message: 'Invalid employee ID' });
       }
