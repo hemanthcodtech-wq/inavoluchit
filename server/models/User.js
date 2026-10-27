@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema({
   whatsappNumber: String,
   gender: String,
   dob: String,
+  age: String,
   occupation: String,
   address: String,
   city: String,

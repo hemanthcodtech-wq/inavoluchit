@@ -43,6 +43,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [email, setEmail] = useState('');
   const [gender, setGender] = useState('Male');
+  const [age, setAge] = useState('');
   const [dob, setDob] = useState('');
   const [occupation, setOccupation] = useState('');
 
@@ -232,6 +233,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
     setWhatsappNumber('');
     setEmail('');
     setGender('Male');
+    setAge('');
     setDob('');
     setOccupation('');
     setAddress('');
@@ -381,7 +383,8 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
       formData.append('whatsappNumber', whatsappNumber.trim() || phone.trim());
       formData.append('email', email.trim());
       formData.append('gender', gender);
-      formData.append('dob', dob);
+      formData.append('age', age ? age.toString().trim() : '');
+      formData.append('dob', dob || '');
       formData.append('occupation', occupation.trim());
       formData.append('address', address.trim());
       formData.append('city', city.trim());
@@ -452,9 +455,9 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
   if (!isOpen) return null;
 
   const stepsList = [
-    { num: 1, title: 'Official & Contact', desc: 'Name, Phone & Profile' },
+    { num: 1, title: 'Official & Contact', desc: 'Name, Phone & Age' },
     { num: 2, title: 'Address & Nominee', desc: 'Residential & Nominee' },
-    { num: 3, title: 'KYC & Live Capture', desc: 'Aadhaar (Req), PAN & Pic' },
+    { num: 3, title: 'KYC & Live Capture', desc: 'Aadhaar (Req), Photo (Optional)' },
     { num: 4, title: 'Portal Password', desc: 'Set Password & Activate' },
   ];
 
@@ -545,7 +548,7 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                 <p 
                   className="admin-modal-header-desc"
                   style={{ margin: '0.2rem 0 0 0', fontSize: '0.82rem', color: '#e2e8f0' }}>
-                  Register member with official contact, residential address, KYC (Aadhaar Mandatory, PAN Optional), and user live photo.
+                  Register member with official contact, residential address, KYC (Aadhaar Mandatory, PAN & Photo Optional).
                 </p>
               </div>
             </div>
@@ -867,11 +870,14 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     </div>
 
                     <div>
-                      <label style={labelStyle}>Date of Birth</label>
+                      <label style={labelStyle}>Age (Years)</label>
                       <input
-                        type="date"
-                        value={dob}
-                        onChange={(e) => setDob(e.target.value)}
+                        type="number"
+                        min="1"
+                        max="120"
+                        value={age}
+                        onChange={(e) => setAge(e.target.value)}
+                        placeholder="e.g. 35"
                         style={inputStyle}
                       />
                     </div>
@@ -1074,15 +1080,15 @@ const AdminUserRegistrationModal = ({ isOpen, onClose, onUserCreated }) => {
                     className="admin-modal-kyc-grid"
                     style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '1.35rem' }}>
                     
-                    {/* 1. USER PROFILE PHOTO (Upload or Live Camera) */}
+                    {/* 1. USER PROFILE PHOTO (Optional - Upload or Live Camera) */}
                     <div style={proofCardStyle}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <Camera size={18} color="#2563eb" />
                           <span style={{ fontWeight: 800, fontSize: '0.92rem', color: '#0f172a' }}>Member Photograph</span>
                         </div>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', backgroundColor: '#eff6ff', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
-                          Live / File
+                        <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#16a34a', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', padding: '0.2rem 0.55rem', borderRadius: '4px' }}>
+                          OPTIONAL
                         </span>
                       </div>
 

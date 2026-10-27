@@ -82,6 +82,16 @@ export const OfficialPaymentReceipt = ({
   const pendingAmount = isApproved ? 0 : (extraData?.pendingAmount ?? dueAmount);
   const amountReceived = isApproved ? dueAmount : (extraData?.amountReceived ?? 0);
 
+  const remainingDue = extraData?.remainingDue !== undefined 
+    ? Number(extraData.remainingDue)
+    : (payment?.remainingDue !== undefined ? Number(payment.remainingDue) : (isApproved ? 0 : dueAmount));
+
+  const excessAmount = extraData?.excessAmount !== undefined 
+    ? Number(extraData.excessAmount) 
+    : (payment?.excessAmount !== undefined ? Number(payment.excessAmount) : (amountReceived > dueAmount ? (amountReceived - dueAmount) : 0));
+
+  const digitalSignatureHash = payment?.digitalSignature?.hash || extraData?.digitalSignature?.hash || `INA-AUTH-${String(payment?.id || payment?._id || '1088').slice(-8).toUpperCase()}`;
+
   const paymentMode = payment?.paymentMode || extraData?.paymentMode || (payment?.transactionId ? 'UPI' : 'UPI');
 
   let daysLate = 0;
@@ -488,28 +498,29 @@ export const OfficialPaymentReceipt = ({
         {/* ================= 4. BOTTOM SPLIT: VERIFICATION BADGE & TOTALS ================= */}
         <div className="receipt-bottom-split" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap', marginBottom: '14px' }}>
           
-          {/* Left: Verified & Confirmed Badge */}
+          {/* Left: Digitally Signed & Authenticated Badge Box */}
           <div
             className="receipt-bottom-left"
             style={{
-              flex: '1 1 220px',
+              flex: '1 1 230px',
               backgroundColor: '#eff6ff',
-              border: '1.5px solid #a5b4fc',
+              border: '1.5px solid #93c5fd',
               borderRadius: '8px',
               padding: '10px 12px',
               boxSizing: 'border-box'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '12px', color: '#2563eb' }}>✓</span>
-              <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
-                PAYMENT VERIFIED & CONFIRMED
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
+              <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: 900 }}>✓</span>
+              <span style={{ fontSize: '10px', fontWeight: 800, color: '#1d4ed8', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                DIGITALLY SIGNED & AUTHENTICATED
               </span>
             </div>
-            <div style={{ fontSize: '10px', color: '#2563eb', lineHeight: 1.5, fontWeight: 500 }}>
-              <div>• Genuine Authorized Digital Receipt</div>
-              <div>• Reference: <span style={{ fontWeight: 700, wordBreak: 'break-all' }}>{transactionUtr}</span></div>
-              <div>• InaVolu Chit Funds Pvt Ltd</div>
+            <div style={{ fontSize: '9.5px', color: '#1e40af', lineHeight: 1.55, fontWeight: 500 }}>
+              <div>• Authorized Signatory: <strong>InaVolu Chit Funds Pvt Ltd</strong></div>
+              <div>• Digital Auth Code: <span style={{ fontWeight: 800, color: '#0f172a', wordBreak: 'break-all' }}>{digitalSignatureHash}</span></div>
+              <div>• Timestamp: {paymentDateStr} | Verified Digitally</div>
+              <div style={{ fontSize: '8.5px', color: '#64748b', marginTop: '3px' }}>Legally authenticated tax invoice / receipt.</div>
             </div>
           </div>
 
@@ -517,16 +528,24 @@ export const OfficialPaymentReceipt = ({
           <div className="receipt-bottom-right" style={{ flex: '1 1 220px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11px', marginBottom: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontWeight: 600 }}>
-                <span>Base Due:</span>
+                <span>Base Monthly Due:</span>
                 <span style={{ color: '#0f172a' }}>{formatCurrency(baseMonthlyDue)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontWeight: 600 }}>
-                <span>Total Payable:</span>
+                <span>Total Due for Month:</span>
                 <span style={{ color: '#0f172a', fontWeight: 700 }}>{formatCurrency(totalPayable)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontWeight: 600 }}>
-                <span>Pending:</span>
-                <span style={{ color: pendingAmount > 0 ? '#dc2626' : '#2563eb', fontWeight: 700 }}>{formatCurrency(pendingAmount)}</span>
+                <span>Remaining Due to Pay:</span>
+                <span style={{ color: remainingDue > 0 ? '#dc2626' : '#16a34a', fontWeight: 800 }}>
+                  {remainingDue > 0 ? formatCurrency(remainingDue) : '₹0 (Fully Paid)'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontWeight: 600 }}>
+                <span>Excess Balance with Us:</span>
+                <span style={{ color: excessAmount > 0 ? '#d97706' : '#64748b', fontWeight: 800 }}>
+                  {excessAmount > 0 ? `${formatCurrency(excessAmount)} (Advance)` : '₹0 (Nil)'}
+                </span>
               </div>
             </div>
 

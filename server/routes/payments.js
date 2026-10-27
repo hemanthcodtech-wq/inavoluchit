@@ -4,6 +4,7 @@ const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, Customer
 const { protect, admin, staff } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
 const { logAuditEvent } = require('../utils/auditLogger');
+const receiptPdfService = require('../utils/receiptPdfService');
 
 
 const getFileUrl = (file) => {
@@ -205,7 +206,59 @@ router.post('/:id/verify', protect, staff, async (req, res) => {
         verifiedAt: new Date()
       });
 
+    let receiptData = null;
     if (status === 'approved') {
+      const chit = await Chit.findById(payment.chitId);
+      const user = await User.findById(payment.userId);
+
+      if (chit && user) {
+        try {
+          const userSlots = await ChitMember.countDocuments({ chitId: chit._id, userId: user._id, status: 'approved' }) || 1;
+          const configObj = (chit.monthlyDues || []).find(d => d.monthNumber === payment.monthNumber);
+          const configuredDue = configObj ? Number(configObj.dueAmount || 0) : (chit.monthlyContribution || 0);
+          const totalDue = configuredDue * userSlots;
+
+          const allApprovedPayments = await Payment.find({
+            chitId: chit._id,
+            userId: user._id,
+            monthNumber: payment.monthNumber,
+            status: 'approved'
+          }).lean();
+
+          const totalPaidSoFar = allApprovedPayments.reduce((acc, p) => acc + (p.amount || 0), 0) + (payment.amount || 0);
+          const remainingDue = Math.max(0, totalDue - totalPaidSoFar);
+          const excessAmount = totalPaidSoFar > totalDue ? (totalPaidSoFar - totalDue) : 0;
+
+          receiptData = await receiptPdfService.generateAndUploadReceipt({
+            chit,
+            user,
+            payment,
+            monthNumber: payment.monthNumber,
+            amountPaid: payment.amount,
+            paymentMode: payment.paymentMode || 'UPI/Online',
+            paymentDate: payment.paymentDate || new Date(),
+            transactionId: payment.transactionId,
+            receiptNo: payment.receiptNo,
+            configuredDue,
+            userSlots,
+            totalPaidSoFar
+          });
+
+          await Payment.findByIdAndUpdate(payment.id, {
+            receiptUrl: receiptData.receiptUrl,
+            receiptPublicId: receiptData.receiptPublicId,
+            receiptNo: receiptData.receiptNo,
+            dueAmount: totalDue,
+            remainingDue,
+            excessAmount,
+            digitalSignature: receiptData.digitalSignature,
+            whatsappText: receiptData.whatsappText
+          });
+        } catch (receiptErr) {
+          console.error('Error generating receipt on verify:', receiptErr);
+        }
+      }
+
       await logAuditEvent({
         req,
         module: 'receipts',
@@ -213,10 +266,9 @@ router.post('/:id/verify', protect, staff, async (req, res) => {
         recordId: payment.id,
         result: 'Success',
         severity: 'Info',
-        details: `Approved payment of ₹${payment.amount}`
+        details: `Approved payment of ₹${payment.amount}. Receipt saved in Cloudinary.`
       });
 
-      const chit = await Chit.findById(payment.chitId);
       if (chit) {
         const approvedMembersCount = await ChitMember.countDocuments({ chitId: chit._id, status: 'approved' });
         const paymentsForMonth = await Payment.countDocuments({
@@ -244,10 +296,15 @@ router.post('/:id/verify', protect, staff, async (req, res) => {
       });
     }
 
+    const finalPayment = await Payment.findById(payment.id);
+
     res.json({
       success: true,
-      message: `Payment status updated to ${status}.`,
-      data: updatedPayment,
+      message: `Payment status updated to ${status}. ${receiptData ? 'Receipt generated & saved to Cloudinary.' : ''}`,
+      data: finalPayment,
+      receiptUrl: receiptData?.receiptUrl || finalPayment?.receiptUrl,
+      whatsappUrl: receiptData?.whatsappUrl || null,
+      whatsappText: receiptData?.whatsappText || finalPayment?.whatsappText
     });
 
   } catch (error) {
@@ -387,6 +444,54 @@ router.post('/admin-toggle-status', protect, staff, async (req, res) => {
           });
       }
 
+      // Generate Cloudinary Receipt & WhatsApp message
+      let receiptData = null;
+      try {
+        const fullUser = await User.findById(userId);
+        const userSlots = await ChitMember.countDocuments({ chitId, userId, status: 'approved' }) || 1;
+        const configObj = (chit.monthlyDues || []).find(d => d.monthNumber === mNum);
+        const configuredDue = configObj ? Number(configObj.dueAmount || 0) : (chit.monthlyContribution || 0);
+        const totalDue = configuredDue * userSlots;
+
+        const allApprovedPayments = await Payment.find({
+          chitId,
+          userId,
+          monthNumber: mNum,
+          status: 'approved'
+        }).lean();
+
+        const totalPaidSoFar = allApprovedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+        const remainingDue = Math.max(0, totalDue - totalPaidSoFar);
+        const excessAmount = totalPaidSoFar > totalDue ? (totalPaidSoFar - totalDue) : 0;
+
+        receiptData = await receiptPdfService.generateAndUploadReceipt({
+          chit,
+          user: fullUser,
+          payment: updatedOrCreated,
+          monthNumber: mNum,
+          amountPaid: updatedOrCreated.amount,
+          paymentMode: paymentMode || 'Cash',
+          paymentDate: updatedOrCreated.paymentDate || new Date(),
+          transactionId: txnRef,
+          receiptNo: updatedOrCreated.receiptNo,
+          configuredDue,
+          userSlots,
+          totalPaidSoFar
+        });
+
+        updatedOrCreated.receiptUrl = receiptData.receiptUrl;
+        updatedOrCreated.receiptPublicId = receiptData.receiptPublicId;
+        updatedOrCreated.receiptNo = receiptData.receiptNo;
+        updatedOrCreated.dueAmount = totalDue;
+        updatedOrCreated.remainingDue = remainingDue;
+        updatedOrCreated.excessAmount = excessAmount;
+        updatedOrCreated.digitalSignature = receiptData.digitalSignature;
+        updatedOrCreated.whatsappText = receiptData.whatsappText;
+        await updatedOrCreated.save();
+      } catch (receiptErr) {
+        console.error('Error generating receipt on toggle status:', receiptErr);
+      }
+
       // Check if all approved members for chit.currentMonth are now paid
       const approvedMembersCount = await ChitMember.countDocuments({ chitId, status: 'approved' });
       const approvedPaymentsForMonth = await Payment.countDocuments({ chitId, monthNumber: chit.currentMonth, status: 'approved' });
@@ -399,8 +504,11 @@ router.post('/admin-toggle-status', protect, staff, async (req, res) => {
 
       return res.json({
         success: true,
-        message: `Month ${mNum} marked as PAID for ${targetUser?.name || 'member'} successfully.`,
-        data: updatedOrCreated
+        message: `Month ${mNum} marked as PAID for ${targetUser?.name || 'member'} successfully. Receipt generated & saved in Cloudinary!`,
+        data: updatedOrCreated,
+        receiptUrl: receiptData?.receiptUrl || updatedOrCreated?.receiptUrl,
+        whatsappUrl: receiptData?.whatsappUrl || null,
+        whatsappText: receiptData?.whatsappText || updatedOrCreated?.whatsappText
       });
     } else {
       // status === 'unpaid'
@@ -487,5 +595,95 @@ router.get('/all-history', protect, staff, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching payment history' });
   }
 });
+
+// @route   GET /api/payments/receipt/verify/:receiptNo
+// @desc    Public receipt verification & detail lookup by receipt number or auth hash
+// @access  Public
+router.get('/receipt/verify/:receiptNo', async (req, res) => {
+  try {
+    const { receiptNo } = req.params;
+    if (!receiptNo) {
+      return res.status(400).json({ success: false, message: 'Receipt number is required' });
+    }
+
+    const cleanReceiptNo = receiptNo.replace(/\.pdf$/i, '').trim();
+
+    const payment = await Payment.findOne({
+      $or: [
+        { receiptNo: cleanReceiptNo },
+        { receiptNo: { $regex: new RegExp(`^${cleanReceiptNo}$`, 'i') } },
+        { 'digitalSignature.hash': cleanReceiptNo }
+      ]
+    })
+      .populate('userId', 'name memberId phone')
+      .populate('chitId', 'name monthlyContribution durationMonths startDate')
+      .lean();
+
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: `Receipt "${cleanReceiptNo}" could not be found or verified.`
+      });
+    }
+
+    return res.json({
+      success: true,
+      receipt: {
+        receiptNo: payment.receiptNo,
+        amount: payment.amount,
+        paymentDate: payment.paymentDate,
+        paymentMode: payment.paymentMode || 'Cash',
+        transactionId: payment.transactionId,
+        monthNumber: payment.monthNumber,
+        dueAmount: payment.dueAmount || 0,
+        remainingDue: payment.remainingDue || 0,
+        excessAmount: payment.excessAmount || 0,
+        receiptUrl: payment.receiptUrl,
+        digitalSignature: payment.digitalSignature || {
+          hash: 'INA-AUTH-VERIFIED',
+          signedBy: 'InaVolu Chit Funds Private Limited'
+        },
+        status: payment.status,
+        userName: payment.userId?.name || 'Valued Member',
+        memberId: payment.userId?.memberId || 'N/A',
+        chitName: payment.chitId?.name || 'InaVolu Chit Scheme',
+        monthlyContribution: payment.chitId?.monthlyContribution || 0,
+        durationMonths: payment.chitId?.durationMonths || 0,
+        startDate: payment.chitId?.startDate
+      }
+    });
+  } catch (err) {
+    console.error('Error verifying receipt:', err);
+    return res.status(500).json({ success: false, message: 'Server error verifying receipt.' });
+  }
+});
+
+// @route   GET /api/payments/receipt/download/:receiptNo
+// @desc    Direct redirect/download to official PDF receipt
+// @access  Public
+router.get('/receipt/download/:receiptNo', async (req, res) => {
+  try {
+    const { receiptNo } = req.params;
+    const cleanReceiptNo = (receiptNo || '').replace(/\.pdf$/i, '').trim();
+
+    const payment = await Payment.findOne({
+      $or: [
+        { receiptNo: cleanReceiptNo },
+        { receiptNo: { $regex: new RegExp(`^${cleanReceiptNo}$`, 'i') } },
+        { 'digitalSignature.hash': cleanReceiptNo }
+      ]
+    }).lean();
+
+    if (!payment || !payment.receiptUrl) {
+      return res.status(404).send('Official receipt PDF not found');
+    }
+
+    return res.redirect(payment.receiptUrl);
+  } catch (err) {
+    console.error('Error downloading receipt PDF:', err);
+    return res.status(500).send('Error loading receipt PDF');
+  }
+});
+
 module.exports = router;
 

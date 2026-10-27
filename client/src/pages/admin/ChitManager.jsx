@@ -885,7 +885,7 @@ const ChitManager = () => {
                     <div className="chit-card-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.5rem', borderTop: '1px solid #f3f4f6', paddingTop: '0.85rem', flexWrap: 'wrap' }}>
                       <button
                         type="button"
-                        onClick={() => setSelectedChitForDues(chit)}
+                        onClick={() => navigate(`/admin/chits/${chit.id || chit._id}/dues`)}
                         title="Manage Monthly Dues & User Payments"
                         style={{
                           display: 'flex',

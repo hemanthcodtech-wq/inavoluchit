@@ -9,7 +9,7 @@ import {
   CheckCircle, 
   AlertCircle, 
   X, 
-  DollarSign,
+  IndianRupee,
   CreditCard,
   Edit3,
   Lock,
@@ -409,7 +409,7 @@ const MyActiveChits = () => {
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
                       <div style={{ width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <DollarSign size={13} color="#2563eb" />
+                        <IndianRupee size={13} color="#2563eb" />
                       </div>
                       <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1f2937', lineHeight: 1.3 }}>Installment Schedule & Auction Status</span>
                     </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   CheckCircle2,
@@ -10,7 +11,13 @@ import {
   Layers,
   Sparkles,
   TrendingDown,
-  Info
+  Info,
+  MessageCircle,
+  FileText,
+  ExternalLink,
+  ShieldCheck,
+  Check,
+  Cloud
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import ProofUploader from './ProofUploader';
@@ -42,6 +49,12 @@ const RecordChitPaymentModal = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Receipt & WhatsApp Dispatch States
+  const [savedReceiptData, setSavedReceiptData] = useState(null);
+  const [showReceiptSuccess, setShowReceiptSuccess] = useState(false);
+  const [autoOpenWhatsApp, setAutoOpenWhatsApp] = useState(true);
+  const [whatsAppSent, setWhatsAppSent] = useState(false);
 
   // Build user slots & info map from members or chit.members
   const userMap = {};
@@ -134,6 +147,9 @@ const RecordChitPaymentModal = ({
       setError('');
       setSuccess('');
       setProofFile(null);
+      setSavedReceiptData(null);
+      setShowReceiptSuccess(false);
+      setWhatsAppSent(false);
 
       const m = editingPayment
         ? editingPayment.monthNumber
@@ -240,11 +256,18 @@ const RecordChitPaymentModal = ({
 
       const data = await res.json();
       if (data.success) {
-        setSuccess(data.message || 'Payment saved successfully! User due has been reduced.');
+        setSuccess(data.message || 'Payment saved successfully! Official receipt generated.');
         if (onPaymentRecorded) onPaymentRecorded(data.data);
-        setTimeout(() => {
-          onClose();
-        }, 1200);
+
+        const receiptPayload = data.data || data;
+        setSavedReceiptData(receiptPayload);
+        setShowReceiptSuccess(true);
+
+        const targetWhatsappUrl = receiptPayload.whatsappUrl || data.whatsappUrl;
+        if (autoOpenWhatsApp && targetWhatsappUrl) {
+          window.open(targetWhatsappUrl, '_blank');
+          setWhatsAppSent(true);
+        }
       } else {
         setError(data.message || 'Failed to record payment.');
       }
@@ -256,19 +279,39 @@ const RecordChitPaymentModal = ({
     }
   };
 
-  return (
+  const handleOpenWhatsApp = () => {
+    const url = savedReceiptData?.whatsappUrl || savedReceiptData?.data?.whatsappUrl;
+    if (url) {
+      window.open(url, '_blank');
+      setWhatsAppSent(true);
+    }
+  };
+
+  const handleViewReceipt = () => {
+    const url = savedReceiptData?.receiptUrl || savedReceiptData?.payment?.receiptUrl;
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
+  return createPortal(
     <div
       style={{
         position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(10, 25, 47, 0.65)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(15, 23, 42, 0.7)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 99999,
-        padding: '1.25rem',
+        zIndex: 999999,
+        padding: '1rem',
         boxSizing: 'border-box'
       }}
       onClick={onClose}
@@ -276,37 +319,37 @@ const RecordChitPaymentModal = ({
       <div
         style={{
           background: '#ffffff',
-          borderRadius: '18px',
-          maxWidth: '620px',
+          borderRadius: '12px',
+          maxWidth: '560px',
           width: '100%',
-          maxHeight: '92vh',
-          boxShadow: '0 25px 60px -15px rgba(10, 30, 59, 0.4), 0 0 0 1px rgba(226, 232, 240, 0.8)',
-          overflowY: 'auto',
-          border: '1px solid rgba(226, 232, 240, 0.9)',
+          maxHeight: '90vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
+          overflow: 'hidden',
+          border: '1px solid #cbd5e1',
           boxSizing: 'border-box',
-          animation: 'modalScaleIn 0.22s ease-out'
+          animation: 'modalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div
           style={{
-            background: 'linear-gradient(135deg, #0a1e3b 0%, #0f274a 100%)',
+            background: '#0a1e3b',
             color: '#ffffff',
-            padding: '1.15rem 1.5rem',
+            padding: '0.9rem 1.25rem',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+            flexShrink: 0,
+            borderBottom: '1px solid #1e293b'
           }}
         >
           <div>
             <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#ffffff' }}>
               <CreditCard size={18} color="#22c55e" />
-              <span>{editingPayment ? 'Update Member Payment' : 'Record Member Payment'}</span>
+              <span>{showReceiptSuccess ? 'Payment Receipt & WhatsApp Notice' : (editingPayment ? 'Update Member Payment' : 'Record Member Payment')}</span>
             </h3>
             <p style={{ fontSize: '0.78rem', color: '#94a3b8', margin: '0.2rem 0 0 0' }}>
               {chit.name} • {formatChitMonthWithNum(chit, monthNumber)} Installment
@@ -333,14 +376,16 @@ const RecordChitPaymentModal = ({
           </button>
         </div>
 
-        {/* Content Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '1.35rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-          {error && (
-            <div style={{ padding: '0.75rem 1rem', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '10px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '0.45rem', border: '1px solid #fca5a5' }}>
-              <AlertCircle size={16} />
-              <span>{error}</span>
-            </div>
-          )}
+        {/* Content Form or Receipt Console */}
+        {!showReceiptSuccess ? (
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', margin: 0 }}>
+            <div style={{ padding: '1.15rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', flex: 1 }}>
+              {error && (
+                <div style={{ padding: '0.65rem 0.85rem', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '8px', fontSize: '0.82rem', display: 'flex', alignItems: 'center', gap: '0.45rem', border: '1px solid #fca5a5' }}>
+                  <AlertCircle size={15} />
+                  <span>{error}</span>
+                </div>
+              )}
 
           {success && (
             <div style={{ padding: '0.75rem 1rem', backgroundColor: '#dcfce7', color: '#16a34a', borderRadius: '10px', fontSize: '0.84rem', display: 'flex', alignItems: 'center', gap: '0.45rem', border: '1px solid #86efac' }}>
@@ -605,49 +650,313 @@ const RecordChitPaymentModal = ({
             />
           </div>
 
-          {/* Footer Actions */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
+            {/* WhatsApp Auto-send Toggle */}
+            <div 
+              onClick={() => setAutoOpenWhatsApp(!autoOpenWhatsApp)}
               style={{
-                padding: '0.65rem 1.25rem',
-                borderRadius: '10px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                color: '#475569',
-                fontWeight: 700,
-                fontSize: '0.85rem',
+                padding: '0.75rem 0.95rem',
+                backgroundColor: autoOpenWhatsApp ? '#f0fdf4' : '#f8fafc',
+                borderRadius: '12px',
+                border: `1.5px solid ${autoOpenWhatsApp ? '#86efac' : '#e2e8f0'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease'
               }}
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.65rem 1.6rem',
-                borderRadius: '10px',
-                border: 'none',
-                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: '0.88rem',
-                cursor: loading ? 'not-allowed' : 'pointer',
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  backgroundColor: autoOpenWhatsApp ? '#22c55e' : '#cbd5e1',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <MessageCircle size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 800, color: autoOpenWhatsApp ? '#166534' : '#334155' }}>
+                    Generate Receipt & Send via WhatsApp
+                  </div>
+                  <div style={{ fontSize: '0.73rem', color: autoOpenWhatsApp ? '#15803d' : '#64748b' }}>
+                    Generates official PDF, saves to Cloudinary, and opens member's WhatsApp
+                  </div>
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoOpenWhatsApp}
+                onChange={(e) => setAutoOpenWhatsApp(e.target.checked)}
+                onClick={(e) => e.stopPropagation()}
+                style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#16a34a' }}
+              />
+            </div>
+
+            </div>
+
+            {/* Fixed Footer Actions */}
+            <div style={{
+              padding: '0.75rem 1.25rem',
+              backgroundColor: '#f8fafc',
+              borderTop: '1px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '0.65rem',
+              flexShrink: 0
+            }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                style={{
+                  padding: '0.55rem 1.15rem',
+                  borderRadius: '8px',
+                  border: '1.5px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  color: '#475569',
+                  fontWeight: 700,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: '0.55rem 1.35rem',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.86rem',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}
+              >
+                {loading ? 'Saving & Generating Receipt...' : (editingPayment ? 'Update Payment' : 'Save Payment & Generate Receipt')}
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* View 2: CLOUDINARY RECEIPT & WHATSAPP DISPATCH CONSOLE */
+          <div style={{ padding: '1.4rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+            
+            {/* Success Banner */}
+            <div style={{
+              padding: '1rem 1.2rem',
+              backgroundColor: '#f0fdf4',
+              borderRadius: '14px',
+              border: '1.5px solid #86efac',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.75rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '50%',
+                  backgroundColor: '#22c55e',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <CheckCircle2 size={22} />
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '0.98rem', fontWeight: 900, color: '#166534', margin: 0 }}>
+                    Payment Saved & Official Receipt Generated!
+                  </h4>
+                  <p style={{ fontSize: '0.78rem', color: '#15803d', margin: '0.2rem 0 0 0' }}>
+                    Receipt #{savedReceiptData?.receiptNo || savedReceiptData?.payment?.receiptNo || 'INA'} uploaded to Cloudinary
+                  </p>
+                </div>
+              </div>
+
+              {/* Cloudinary Badge */}
+              <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.45rem',
-                boxShadow: '0 4px 14px rgba(22, 163, 74, 0.3)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              {loading ? 'Saving...' : (editingPayment ? 'Update Payment & Due' : 'Save Payment & Reduce Due')}
-            </button>
+                gap: '0.35rem',
+                backgroundColor: '#eff6ff',
+                color: '#1d4ed8',
+                border: '1px solid #bfdbfe',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.75rem',
+                fontWeight: 800
+              }}>
+                <Cloud size={14} color="#2563eb" />
+                <span>Cloudinary Stored</span>
+              </div>
+            </div>
+
+            {/* Financial Summary Card */}
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              border: '1.5px solid #e2e8f0',
+              padding: '1rem 1.15rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+            }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1e3a8a', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.45rem' }}>
+                Payment & Due Breakdown
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '0.75rem' }}>
+                <div style={{ backgroundColor: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>AMOUNT PAID</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: '#16a34a', marginTop: '0.15rem' }}>
+                    ₹{Number(savedReceiptData?.payment?.amount || amountPaid || 0).toLocaleString()}
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>REMAINING DUE TO PAY</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: (savedReceiptData?.dueSummary?.remainingDue > 0 ? '#dc2626' : '#16a34a'), marginTop: '0.15rem' }}>
+                    {savedReceiptData?.dueSummary?.remainingDue > 0 
+                      ? `₹${Number(savedReceiptData.dueSummary.remainingDue).toLocaleString()}` 
+                      : '₹0 (Fully Paid)'}
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: '#f8fafc', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>EXCESS WITH US</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 900, color: (savedReceiptData?.dueSummary?.excessAmount > 0 ? '#d97706' : '#64748b'), marginTop: '0.15rem' }}>
+                    {savedReceiptData?.dueSummary?.excessAmount > 0 
+                      ? `₹${Number(savedReceiptData.dueSummary.excessAmount).toLocaleString()}` 
+                      : '₹0 (Nil)'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Digital Signature Pill */}
+              <div style={{ marginTop: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#eff6ff', padding: '0.55rem 0.85rem', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.76rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: '#1d4ed8', fontWeight: 700 }}>
+                  <ShieldCheck size={16} />
+                  <span>Digital Signature Auth Ref:</span>
+                </div>
+                <span style={{ fontWeight: 800, color: '#0f172a', fontFamily: 'monospace' }}>
+                  {savedReceiptData?.digitalSignature?.hash || savedReceiptData?.payment?.digitalSignature?.hash || 'INA-AUTH-VERIFIED'}
+                </span>
+              </div>
+            </div>
+
+            {/* Member WhatsApp Notice Box */}
+            <div style={{
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px',
+              border: '1.5px solid #cbd5e1',
+              padding: '1rem 1.15rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 800, fontSize: '0.85rem', color: '#0f172a' }}>
+                  <MessageCircle size={18} color="#16a34a" />
+                  <span>WhatsApp Receipt Notice</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: whatsAppSent ? '#16a34a' : '#64748b', fontWeight: 700 }}>
+                  {whatsAppSent ? '✓ Chat Opened' : '● Ready to Dispatch'}
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.78rem', color: '#475569', marginBottom: '0.65rem' }}>
+                Target Member: <strong>{selectedUserData?.name}</strong> • Phone: <strong>{selectedUserData?.phone || 'N/A'}</strong>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={handleOpenWhatsApp}
+                  style={{
+                    flex: '1 1 200px',
+                    padding: '0.7rem 1.1rem',
+                    borderRadius: '10px',
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.86rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.35)'
+                  }}
+                >
+                  <MessageCircle size={17} />
+                  <span>Send Receipt on WhatsApp</span>
+                </button>
+
+                {(savedReceiptData?.receiptUrl || savedReceiptData?.payment?.receiptUrl) && (
+                  <button
+                    type="button"
+                    onClick={handleViewReceipt}
+                    style={{
+                      flex: '1 1 180px',
+                      padding: '0.7rem 1.1rem',
+                      borderRadius: '10px',
+                      border: '1.5px solid #0a1e3b',
+                      backgroundColor: '#ffffff',
+                      color: '#0a1e3b',
+                      fontWeight: 800,
+                      fontSize: '0.86rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem'
+                    }}
+                  >
+                    <ExternalLink size={16} />
+                    <span>View Official Receipt (PDF)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Done Button */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: '0.65rem 1.5rem',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  fontWeight: 800,
+                  fontSize: '0.86rem',
+                  cursor: 'pointer'
+                }}
+              >
+                Done / Close
+              </button>
+            </div>
+
           </div>
-        </form>
+        )}
       </div>
 
       <style>{`
@@ -656,7 +965,8 @@ const RecordChitPaymentModal = ({
           to { opacity: 1; transform: scale(1); }
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 };
 

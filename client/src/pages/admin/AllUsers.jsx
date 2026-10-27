@@ -202,7 +202,7 @@ const AllUsers = () => {
         'KYC Status': u.isApproved ? 'Verified Member' : 'Pending Review',
         'Registration Date': fmtDate(u.createdAt),
         'Gender': txt(u.gender),
-        'Date of Birth': fmtDate(u.dob),
+        'Age': txt(u.age ? `${u.age} yrs` : (u.dob ? fmtDate(u.dob) : '')),
         'Occupation': txt(u.occupation),
         'Address': txt(u.address),
         'City': txt(u.city),
@@ -227,7 +227,7 @@ const AllUsers = () => {
 
     const colWidthMap = {
       'S.No': 8, 'Member ID': 20, 'Full Name': 28, 'Phone Number': 20, 'WhatsApp Number': 20,
-      'Email Address': 38, 'KYC Status': 20, 'Registration Date': 22, 'Gender': 12, 'Date of Birth': 18,
+      'Email Address': 38, 'KYC Status': 20, 'Registration Date': 22, 'Gender': 12, 'Age': 14,
       'Occupation': 22, 'Address': 38, 'City': 18, 'State': 18, 'Pincode': 14, 'Aadhar Number': 22,
       'PAN Number': 18, 'Nominee Name': 24, 'Nominee Relationship': 24, 'Nominee Phone': 20,
       'Nominee Address': 38, 'Guarantor Name': 24, 'Guarantor Relationship': 24, 'Guarantor Phone': 20,

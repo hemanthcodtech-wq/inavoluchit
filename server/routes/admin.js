@@ -6,7 +6,7 @@ const { protect, admin, staff } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
 const { logAuditEvent } = require('../utils/auditLogger');
 const { generateNextMemberId } = require('../utils/memberIdHelper');
-
+const receiptPdfService = require('../utils/receiptPdfService');
 
 const bcrypt = require('bcryptjs');
 
@@ -47,6 +47,7 @@ router.post(
         whatsappNumber,
         gender,
         dob,
+        age,
         occupation,
         address,
         city,
@@ -142,6 +143,7 @@ router.post(
           isApproved: true,
           gender: gender || 'Male',
           dob: dob || null,
+          age: age ? String(age).trim() : null,
           occupation: occupation ? occupation.trim() : null,
           address: address.trim(),
           city: city ? city.trim() : null,
@@ -488,6 +490,7 @@ router.put('/users/:id/edit', protect, admin, async (req, res) => {
     if (memberId !== undefined) updateData.memberId = memberId.trim() || null;
     if (gender !== undefined) updateData.gender = gender || null;
     if (dob !== undefined) updateData.dob = dob || null;
+    if (req.body.age !== undefined) updateData.age = req.body.age ? String(req.body.age).trim() : null;
     if (occupation !== undefined) updateData.occupation = occupation || null;
     if (address !== undefined) updateData.address = address || null;
     if (city !== undefined) updateData.city = city || null;
@@ -513,6 +516,7 @@ router.put('/users/:id/edit', protect, admin, async (req, res) => {
     if (securityValue !== undefined) updateData.securityValue = securityValue || null;
     if (securityVerificationStatus !== undefined) updateData.securityVerificationStatus = securityVerificationStatus || null;
     if (securityRemarks !== undefined) updateData.securityRemarks = securityRemarks || null;
+    if (req.body.profileImgUrl !== undefined) updateData.profileImgUrl = req.body.profileImgUrl || null;
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
 
@@ -543,6 +547,7 @@ router.put(
   upload.fields([
     { name: 'aadhar', maxCount: 1 },
     { name: 'pan', maxCount: 1 },
+    { name: 'profile', maxCount: 1 },
   ]),
   async (req, res) => {
     try {
@@ -561,9 +566,13 @@ router.put(
         updateData.panImgUrl = getFileUrl(req.files.pan[0]);
         updateData.panPublicId = getFileUrl(req.files.pan[0]);
       }
+      if (req.files && req.files.profile && req.files.profile[0]) {
+        updateData.profileImgUrl = getFileUrl(req.files.profile[0]);
+        updateData.profilePublicId = getFileUrl(req.files.profile[0]);
+      }
 
       if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ success: false, message: 'Please select an Aadhar or PAN image to upload.' });
+        return res.status(400).json({ success: false, message: 'Please select a profile picture, Aadhar, or PAN image to upload.' });
       }
 
       const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
@@ -845,9 +854,8 @@ router.get('/users-records/:userId', protect, staff, async (req, res) => {
     const chitIds = chits.map(c => c.id);
 
     const rawPayments = await Payment.find({
-      userId: userObjId,
-      chitId: { $in: chitIds }
-    }).populate('chitId').sort({ monthNumber: 1 }).lean();
+      userId: userObjId
+    }).populate('chitId').sort({ paymentDate: -1, createdAt: -1 }).lean();
 
     const payments = rawPayments.map(p => ({
       ...p,
@@ -1047,6 +1055,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       const cleanDigits = rawPhone.replace(/\D/g, '');
       const phone10 = cleanDigits.slice(-10);
       const memberName = u.name || 'Member';
+      const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://www.inavolu.com').replace(/\/+$/, '');
       const slotLabel = item.slotsCount === 1 
         ? (item.ticketIds[0] || '1 Slot') 
         : `${item.slotsCount} Slots (${item.ticketIds.join(', ') || 'Enrolled'})`;
@@ -1065,7 +1074,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
         `\n` +
         `Please pay on or before the due date to keep your chit account active.\n\n` +
         `📱 *Pay online / Check ledger:*\n` +
-        `https://inavoluchit.netlify.app/dashboard\n\n` +
+        `${appBaseUrl}/dashboard\n\n` +
         `Thank you,\n` +
         `*InaVolu Chit Funds Private Limited*`;
 
@@ -1083,6 +1092,24 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       };
     }).filter(m => m.phone);
 
+    const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://www.inavolu.com').replace(/\/+$/, '');
+    const commonWhatsAppText = `🔔 *INAVOLU CHIT FUNDS PRIVATE LIMITED* 🔔\n` +
+      `*OFFICIAL MONTHLY PAYMENT DUE NOTICE*\n\n` +
+      `Dear Members,\n` +
+      `The monthly installment for *${chit.name}* has been scheduled:\n\n` +
+      `📋 *Scheme:* ${chit.name}\n` +
+      `🗓 *Installment:* Month ${mNum} (${monthName})\n` +
+      `💰 *Payable Due Amount:* ₹${formattedAmount} per slot\n` +
+      `📅 *Due Date:* ${dueDateStr}\n` +
+      (notes ? `📝 *Note:* ${notes}\n` : '') +
+      `👥 *Enrolled Members:* ${enrolledMembers.length} Members\n\n` +
+      `Please remit your monthly installment on or before the due date.\n\n` +
+      `📱 *Online Member Portal & Verified Receipts:*\n` +
+      `${appBaseUrl}/dashboard\n\n` +
+      `Thank you,\n` +
+      `*InaVolu Chit Funds Private Limited*\n` +
+      `📞 Helpline: +91 8500319890 | 🌐 Web: www.inavolu.com`;
+
     res.json({
       success: true,
       message: `Monthly due for Month ${mNum} set to ₹${amount.toLocaleString()} successfully!`,
@@ -1092,6 +1119,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
         _id: chit._id.toString()
       },
       enrolledMembers,
+      commonWhatsAppText,
       dueDetails: {
         monthNumber: mNum,
         monthName,
@@ -1146,6 +1174,8 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
       const userPayments = payments.filter(p => p.userId.toString() === uId);
 
       const monthsData = [];
+      let runningExcess = 0; // Carry-over excess advance credit from prior months
+
       for (let m = 1; m <= duration; m++) {
         const config = duesConfig.find(d => d.monthNumber === m);
         const isConfigured = Boolean(config);
@@ -1153,10 +1183,34 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
         const totalDue = isConfigured ? (baseDue * item.slotsCount) : 0;
 
         const monthPayments = userPayments.filter(p => p.monthNumber === m);
-        const amountPaid = monthPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
-        const remainingDue = isConfigured ? Math.max(0, totalDue - amountPaid) : 0;
-        const isPaid = isConfigured ? (totalDue > 0 && remainingDue === 0) : (amountPaid > 0);
-        const isPartial = isConfigured && amountPaid > 0 && remainingDue > 0;
+        const directPaid = monthPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
+
+        // Previous excess available to apply to this month's due
+        const excessAvailable = runningExcess;
+        let excessApplied = 0;
+
+        if (isConfigured && totalDue > 0) {
+          const neededAfterDirect = Math.max(0, totalDue - directPaid);
+          excessApplied = Math.min(excessAvailable, neededAfterDirect);
+          runningExcess -= excessApplied;
+        }
+
+        // Total effective paid for this month = direct cash/online payments + applied advance credit
+        const totalEffectivePaid = directPaid + excessApplied;
+        const remainingDue = isConfigured ? Math.max(0, totalDue - totalEffectivePaid) : 0;
+
+        // If direct payment exceeded this month's due, add surplus to running excess
+        let monthSurplus = 0;
+        if (isConfigured && directPaid > totalDue) {
+          monthSurplus = directPaid - totalDue;
+          runningExcess += monthSurplus;
+        } else if (!isConfigured && directPaid > 0) {
+          // If due was not configured yet, direct payment counts as advance towards future dues
+          runningExcess += directPaid;
+        }
+
+        const isPaid = isConfigured ? (totalDue > 0 && remainingDue === 0) : (totalEffectivePaid > 0);
+        const isPartial = isConfigured && totalEffectivePaid > 0 && remainingDue > 0;
 
         monthsData.push({
           monthNumber: m,
@@ -1165,7 +1219,11 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
           notes: config?.notes || '',
           baseDue,
           totalDue,
-          amountPaid,
+          amountPaid: totalEffectivePaid,
+          directPaid,
+          excessApplied,
+          monthSurplus,
+          excessCarriedOver: runningExcess,
           remainingDue,
           isPaid,
           isPartial,
@@ -1176,7 +1234,9 @@ router.get('/chits/:chitId/dues-summary', protect, staff, async (req, res) => {
             transactionId: p.transactionId,
             proofImgUrl: p.proofImgUrl,
             remarks: p.remarks,
-            paymentMode: p.paymentMode || 'Cash'
+            paymentMode: p.paymentMode || 'Cash',
+            receiptNo: p.receiptNo || null,
+            receiptUrl: p.receiptUrl || null
           }))
         });
       }
@@ -1323,7 +1383,7 @@ router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), 
     // Calculate updated due breakdown for this user & month
     const userSlots = await ChitMember.countDocuments({ chitId: chit._id, userId: user._id, status: 'approved' }) || 1;
     const configObj = (chit.monthlyDues || []).find(d => d.monthNumber === mNum);
-    const configuredDue = configObj ? Number(configObj.dueAmount || 0) : 0;
+    const configuredDue = configObj ? Number(configObj.dueAmount || 0) : (chit.monthlyContribution || 0);
     const totalDue = configuredDue * userSlots;
 
     const allApprovedPayments = await Payment.find({
@@ -1335,6 +1395,39 @@ router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), 
 
     const totalPaidSoFar = allApprovedPayments.reduce((acc, p) => acc + (p.amount || 0), 0);
     const remainingDue = Math.max(0, totalDue - totalPaidSoFar);
+    const excessAmount = totalPaidSoFar > totalDue ? (totalPaidSoFar - totalDue) : 0;
+
+    // Generate Official Receipt PDF with digital signature and save in Cloudinary
+    let receiptData = null;
+    try {
+      receiptData = await receiptPdfService.generateAndUploadReceipt({
+        chit,
+        user,
+        payment,
+        monthNumber: mNum,
+        amountPaid: paidAmt,
+        paymentMode: payment.paymentMode,
+        paymentDate: payment.paymentDate,
+        transactionId: payment.transactionId,
+        receiptNo: payment.receiptNo,
+        configuredDue,
+        userSlots,
+        totalPaidSoFar
+      });
+
+      // Update payment record with Cloudinary receipt link, digital signature, and due metrics
+      payment.receiptUrl = receiptData.receiptUrl;
+      payment.receiptPublicId = receiptData.receiptPublicId;
+      payment.receiptNo = receiptData.receiptNo;
+      payment.dueAmount = totalDue;
+      payment.remainingDue = remainingDue;
+      payment.excessAmount = excessAmount;
+      payment.digitalSignature = receiptData.digitalSignature;
+      payment.whatsappText = receiptData.whatsappText;
+      await payment.save();
+    } catch (receiptErr) {
+      console.error('Error generating/uploading receipt to Cloudinary:', receiptErr);
+    }
 
     await logAuditEvent({
       req,
@@ -1343,19 +1436,26 @@ router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), 
       recordId: payment.id,
       result: 'Success',
       severity: 'Info',
-      details: `${paymentId ? 'Updated' : 'Recorded'} ₹${paidAmt} payment for ${user.name} (Chit: ${chit.name}, Month: ${mNum}). Remaining due: ₹${remainingDue}`
+      details: `${paymentId ? 'Updated' : 'Recorded'} ₹${paidAmt} payment for ${user.name} (Chit: ${chit.name}, Month: ${mNum}). Remaining due: ₹${remainingDue}, Excess: ₹${excessAmount}. Receipt saved to Cloudinary.`
     });
 
     res.json({
       success: true,
-      message: `Payment of ₹${paidAmt.toLocaleString()} saved for ${user.name} (Month ${mNum}). Remaining due: ₹${remainingDue.toLocaleString()}`,
+      message: `Payment of ₹${paidAmt.toLocaleString()} saved for ${user.name} (Month ${mNum}). Receipt generated & saved in Cloudinary!`,
       data: {
         payment,
+        receiptUrl: receiptData?.receiptUrl || payment.receiptUrl,
+        receiptPublicId: receiptData?.receiptPublicId || payment.receiptPublicId,
+        receiptNo: receiptData?.receiptNo || payment.receiptNo,
+        digitalSignature: receiptData?.digitalSignature || payment.digitalSignature,
+        whatsappText: receiptData?.whatsappText || payment.whatsappText,
+        whatsappUrl: receiptData?.whatsappUrl || null,
         dueSummary: {
           monthNumber: mNum,
           totalDue,
           totalPaid: totalPaidSoFar,
           remainingDue,
+          excessAmount,
           isFullyPaid: remainingDue === 0
         }
       }

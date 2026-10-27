@@ -45,6 +45,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import SkyPilot from './pages/SkyPilot';
+import PublicReceiptPage from './pages/PublicReceiptPage';
 
 // Protected Pages (Shared / Users)
 import Dashboard from './pages/Dashboard';
@@ -69,6 +70,9 @@ import AdminLogin from './pages/admin/AdminLogin';
 import AuditLog from './pages/admin/AuditLog';
 import AdminDocuments from './pages/admin/AdminDocuments';
 import ChitPlansManager from './pages/admin/ChitPlansManager';
+
+// Lazy-loaded Dues Ledger Page
+const ChitDuesLedgerPage = React.lazy(() => import('./pages/admin/ChitDuesLedgerPage'));
 
 
 
@@ -120,7 +124,13 @@ const MainLayout = () => {
         '/profile': 'auth'
       };
 
-      const tabName = tabNameMap[location.pathname];
+      let tabName = tabNameMap[location.pathname];
+      let currentModule = moduleMap[location.pathname];
+      if (!tabName && location.pathname.startsWith('/admin/chits/') && location.pathname.endsWith('/dues')) {
+        tabName = 'Chit Dues Ledger';
+        currentModule = 'chit_groups';
+      }
+
       if (tabName) {
         fetch(`${API_URL}/admin/audit-logs/page-view`, {
           method: 'POST',
@@ -130,7 +140,7 @@ const MainLayout = () => {
           },
           body: JSON.stringify({
             tabName,
-            module: moduleMap[location.pathname] || 'system'
+            module: currentModule || 'system'
           })
         }).catch(() => {});
       }
@@ -399,6 +409,8 @@ function App() {
             <Route path="/chit-plans" element={<BrowseChits />} />
             <Route path="/auctions" element={<AuctionManager />} />
             <Route path="/skypilot" element={<SkyPilot />} />
+            <Route path="/receipt/:receiptNo" element={<PublicReceiptPage />} />
+            <Route path="/receipts/:receiptNo" element={<PublicReceiptPage />} />
           </Route>
 
           {/* Secure Member / Shared Routes */}
@@ -419,6 +431,17 @@ function App() {
                 <Route path="/admin/chit-plans" element={<ChitPlansManager />} />
                 <Route path="/admin/chit-approvals" element={<ChitApprovals />} />
                 <Route path="/admin/chits" element={<ChitManager />} />
+                <Route path="/admin/chits/:chitId/dues" element={
+                  <React.Suspense fallback={
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '0.75rem', color: '#2563eb', fontWeight: 600 }}>
+                      <div style={{ width: '32px', height: '32px', border: '3px solid #dbeafe', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      <span>Loading Dues Ledger...</span>
+                      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    </div>
+                  }>
+                    <ChitDuesLedgerPage />
+                  </React.Suspense>
+                } />
                 <Route path="/admin/auctions" element={<AuctionManager />} />
                 <Route path="/admin/payments" element={<VerifyPayments />} />
                 <Route path="/admin/payment-history" element={<PaymentHistory />} />
@@ -427,6 +450,7 @@ function App() {
                 <Route path="/admin/all-users" element={<AllUsers />} />
                 <Route path="/admin/documents" element={<AdminDocuments />} />
                 <Route path="/admin/records/user/:userId" element={<UserDetailedRecords />} />
+                <Route path="/admin/records/user/:userId/:slug" element={<UserDetailedRecords />} />
                 <Route path="/admin/audit-log" element={<AuditLog />} />
               </Route>
 

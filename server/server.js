@@ -51,6 +51,29 @@ app.use('/auctions', require('./routes/auctions'));
 app.use('/api/documents', require('./routes/documents'));
 app.use('/documents', require('./routes/documents'));
 
+// Direct Public PDF Download / Redirect Route (e.g. /receipts/:receiptNo.pdf)
+app.get(['/receipts/:receiptNo', '/receipts/:receiptNo.pdf', '/receipt/:receiptNo.pdf'], async (req, res) => {
+  try {
+    const { receiptNo } = req.params;
+    const cleanReceiptNo = (receiptNo || '').replace(/\.pdf$/i, '').trim();
+    const Payment = require('./models/Payment');
+    const payment = await Payment.findOne({
+      $or: [
+        { receiptNo: cleanReceiptNo },
+        { receiptNo: { $regex: new RegExp(`^${cleanReceiptNo}$`, 'i') } },
+        { 'digitalSignature.hash': cleanReceiptNo }
+      ]
+    }).lean();
+
+    if (!payment || !payment.receiptUrl) {
+      return res.status(404).send('Official receipt PDF not found');
+    }
+    return res.redirect(payment.receiptUrl);
+  } catch (err) {
+    return res.status(500).send('Error loading receipt');
+  }
+});
+
 // Base Route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the ChitFund Management Platform API' });

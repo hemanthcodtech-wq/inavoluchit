@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   X,
   Calendar,
@@ -16,7 +17,8 @@ import {
   TrendingUp,
   Clock,
   Pencil,
-  Trash2
+  Trash2,
+  Receipt
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import SetMonthlyDueModal from './SetMonthlyDueModal';
@@ -470,6 +472,7 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                       <th>{formatChitMonthYear(chit, selectedMonth)} Due</th>
                       <th>Amount Paid</th>
                       <th>Remaining Due</th>
+                      <th style={{ textAlign: 'right' }}>Excess with Us</th>
                       <th>Receipt Proofs</th>
                       <th style={{ textAlign: 'right' }}>Action</th>
                     </tr>
@@ -517,16 +520,35 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                           {/* Amount Paid */}
                           <td className="td-bold text-green">
                             ₹{(mData.amountPaid || 0).toLocaleString()}
+                            {mData.excessApplied > 0 && (
+                              <div style={{ fontSize: '0.68rem', color: '#15803d', fontWeight: 800, marginTop: '0.1rem' }}>
+                                {mData.directPaid > 0
+                                  ? `(₹${mData.directPaid.toLocaleString()} paid + ₹${mData.excessApplied.toLocaleString()} adv)`
+                                  : `(₹${mData.excessApplied.toLocaleString()} Adv Credit)`}
+                              </div>
+                            )}
                           </td>
 
                           {/* Remaining Due */}
                           <td>
                             {isMonthConfigured ? (
                               isFullyPaid ? (
-                                <span className="td-pill pill-paid">
-                                  <CheckCircle2 size={12} />
-                                  <span>Fully Paid</span>
-                                </span>
+                                <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                                  <span className="td-pill pill-paid">
+                                    <CheckCircle2 size={12} />
+                                    <span>Fully Paid</span>
+                                  </span>
+                                  {mData.monthSurplus > 0 && (
+                                    <span style={{ fontSize: '0.65rem', color: '#15803d', fontWeight: 800, backgroundColor: '#dcfce7', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #86efac' }}>
+                                      +₹{mData.monthSurplus.toLocaleString()} Advance
+                                    </span>
+                                  )}
+                                  {mData.excessApplied > 0 && mData.directPaid === 0 && (
+                                    <span style={{ fontSize: '0.65rem', color: '#1d4ed8', fontWeight: 800, backgroundColor: '#eff6ff', padding: '0.1rem 0.4rem', borderRadius: '4px', border: '1px solid #bfdbfe' }}>
+                                      Adv Credit Settled
+                                    </span>
+                                  )}
+                                </div>
                               ) : isPartial ? (
                                 <span className="td-pill pill-partial">
                                   <span>₹{(mData.remainingDue || 0).toLocaleString()} Due</span>
@@ -549,78 +571,122 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
                             )}
                           </td>
 
+                          {/* Excess with Us */}
+                          <td style={{ textAlign: 'right' }}>
+                            {(mData.excessCarriedOver > 0 || mData.monthSurplus > 0) ? (
+                              <div>
+                                <span style={{ fontWeight: 800, color: '#16a34a', display: 'block', fontSize: '0.86rem' }}>
+                                  +₹{(mData.excessCarriedOver || mData.monthSurplus || 0).toLocaleString()}
+                                </span>
+                                <span style={{
+                                  display: 'inline-block',
+                                  fontSize: '0.65rem',
+                                  color: '#15803d',
+                                  fontWeight: 800,
+                                  backgroundColor: '#dcfce7',
+                                  padding: '0.1rem 0.35rem',
+                                  borderRadius: '4px',
+                                  border: '1px solid #86efac',
+                                  marginTop: '0.1rem'
+                                }}>
+                                  Advance Balance
+                                </span>
+                              </div>
+                            ) : (
+                              <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>₹0</span>
+                            )}
+                          </td>
+
                           {/* Receipt Proofs */}
                           <td>
                             {payments.length === 0 ? (
-                              <span className="td-none">No receipts</span>
+                              mData.excessApplied > 0 ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  padding: '0.25rem 0.55rem',
+                                  borderRadius: '6px',
+                                  backgroundColor: '#eff6ff',
+                                  color: '#1d4ed8',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  border: '1px solid #bfdbfe'
+                                }}>
+                                  <span>⚖️ Settled via ₹{mData.excessApplied.toLocaleString()} Prev Month Credit</span>
+                                </span>
+                              ) : (
+                                <span className="td-none">No receipts</span>
+                              )
                             ) : (
                               <div className="td-receipts-flex">
                                 {payments.map((p, pIdx) => {
-                                  const hasProof = p.proofImgUrl && p.proofImgUrl !== 'MANUAL_ENTRY';
+                                  const hasProof = p.proofImgUrl && p.proofImgUrl !== 'MANUAL_ENTRY' && p.proofImgUrl !== 'MANUAL_ADMIN_ENTRY';
+                                  const hasReceiptNo = Boolean(p.receiptNo);
+                                  const isOnline = String(p.paymentMode || '').toLowerCase().includes('online') || String(p.paymentMode || '').toLowerCase().includes('upi');
                                   return (
                                     <div key={p.id || pIdx} className="td-receipt-chip">
-                                      <span className="td-receipt-amt">₹{p.amount.toLocaleString()}</span>
-                                      {hasProof ? (
+                                      <div className="td-receipt-main">
+                                        <span className="td-receipt-amt">₹{p.amount.toLocaleString()}</span>
+                                        <span className={`td-receipt-mode-pill ${isOnline ? 'mode-upi' : 'mode-cash'}`}>
+                                          {p.paymentMode || 'Cash'}
+                                        </span>
+                                      </div>
+                                      <div className="td-receipt-actions">
+                                        {hasReceiptNo && (
+                                          <Link
+                                            to={`/receipt/${p.receiptNo}`}
+                                            target="_blank"
+                                            className="td-btn-chip-action official-doc"
+                                            title={`Official Receipt: ${p.receiptNo}`}
+                                          >
+                                            <Receipt size={11} />
+                                          </Link>
+                                        )}
+                                        {hasProof && (
+                                          <button
+                                            type="button"
+                                            onClick={() => setLightboxUrl(getFullImgUrl(p.proofImgUrl))}
+                                            title="View Receipt Proof"
+                                            className="td-btn-chip-action eye"
+                                          >
+                                            <Eye size={11} />
+                                          </button>
+                                        )}
+                                        {/* Edit Payment */}
                                         <button
                                           type="button"
-                                          onClick={() => setLightboxUrl(getFullImgUrl(p.proofImgUrl))}
-                                          title="View Receipt Proof"
-                                          className="td-receipt-eye"
+                                          onClick={() => {
+                                            setEditingPayment({
+                                              id: p.id,
+                                              userId: u._id || u.id,
+                                              userName: u.name,
+                                              monthNumber: selectedMonth,
+                                              amount: p.amount,
+                                              paidDate: p.paidDate,
+                                              paymentMode: p.paymentMode,
+                                              transactionId: p.transactionId,
+                                              remarks: p.remarks,
+                                              proofImgUrl: p.proofImgUrl
+                                            });
+                                            setPaymentTargetUser(u);
+                                            setIsRecordPaymentOpen(true);
+                                          }}
+                                          title="Update Payment & Receipt"
+                                          className="td-btn-chip-action edit"
                                         >
-                                          <Eye size={12} />
+                                          <Pencil size={11} />
                                         </button>
-                                      ) : (
-                                        <span className="td-receipt-mode">({p.paymentMode || 'Cash'})</span>
-                                      )}
-                                      {/* Edit Payment */}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setEditingPayment({
-                                            id: p.id,
-                                            userId: u._id || u.id,
-                                            userName: u.name,
-                                            monthNumber: selectedMonth,
-                                            amount: p.amount,
-                                            paidDate: p.paidDate,
-                                            paymentMode: p.paymentMode,
-                                            transactionId: p.transactionId,
-                                            remarks: p.remarks,
-                                            proofImgUrl: p.proofImgUrl
-                                          });
-                                          setPaymentTargetUser(u);
-                                          setIsRecordPaymentOpen(true);
-                                        }}
-                                        title="Update Payment & Receipt"
-                                        style={{
-                                          background: 'transparent',
-                                          border: 'none',
-                                          color: '#d97706',
-                                          cursor: 'pointer',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          padding: '1px'
-                                        }}
-                                      >
-                                        <Pencil size={11} />
-                                      </button>
-                                      {/* Delete Payment */}
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeletePayment(p.id)}
-                                        title="Delete Payment Record"
-                                        style={{
-                                          background: 'transparent',
-                                          border: 'none',
-                                          color: '#ef4444',
-                                          cursor: 'pointer',
-                                          display: 'inline-flex',
-                                          alignItems: 'center',
-                                          padding: '1px'
-                                        }}
-                                      >
-                                        <Trash2 size={11} />
-                                      </button>
+                                        {/* Delete Payment */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeletePayment(p.id)}
+                                          title="Delete Payment Record"
+                                          className="td-btn-chip-action del"
+                                        >
+                                          <Trash2 size={11} />
+                                        </button>
+                                      </div>
                                     </div>
                                   );
                                 })}
@@ -1295,33 +1361,86 @@ const ChitDuesLedgerModal = ({ isOpen, onClose, chitId, onChitUpdated }) => {
         .td-receipt-chip {
           display: inline-flex;
           align-items: center;
-          gap: 0.3rem;
-          background-color: #f1f5f9;
-          border: 1px solid #cbd5e1;
+          justify-content: space-between;
+          gap: 0.45rem;
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
           border-radius: 6px;
-          padding: 0.15rem 0.45rem;
-          font-size: 0.7rem;
+          padding: 0.22rem 0.45rem;
+          font-size: 0.74rem;
+          transition: all 0.15s ease;
+        }
+
+        .td-receipt-chip:hover {
+          border-color: #cbd5e1;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+          background-color: #f8fafc;
+        }
+
+        .td-receipt-main {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
         }
 
         .td-receipt-amt {
-          font-weight: 700;
+          font-weight: 800;
           color: #0f172a;
+          font-variant-numeric: tabular-nums;
+          font-size: 0.78rem;
+          letter-spacing: -0.01em;
         }
 
-        .td-receipt-eye {
+        .td-receipt-mode-pill {
+          font-size: 0.63rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
+          padding: 1px 5px;
+          border-radius: 4px;
+        }
+
+        .td-receipt-mode-pill.mode-cash {
+          background-color: #f1f5f9;
+          color: #475569;
+          border: 1px solid #e2e8f0;
+        }
+
+        .td-receipt-mode-pill.mode-upi {
+          background-color: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #bfdbfe;
+        }
+
+        .td-receipt-actions {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.15rem;
+        }
+
+        .td-btn-chip-action {
           background: transparent;
           border: none;
-          color: #2563eb;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
-          padding: 0;
+          justify-content: center;
+          width: 20px;
+          height: 20px;
+          border-radius: 4px;
+          transition: all 0.12s ease;
+          text-decoration: none;
         }
 
-        .td-receipt-mode {
-          font-size: 0.65rem;
-          color: #64748b;
-        }
+        .td-btn-chip-action.official-doc { color: #d97706; }
+        .td-btn-chip-action.official-doc:hover { background: #fef3c7; color: #b45309; }
+        .td-btn-chip-action.eye { color: #2563eb; }
+        .td-btn-chip-action.eye:hover { background: #eff6ff; color: #1d4ed8; }
+        .td-btn-chip-action.edit { color: #64748b; }
+        .td-btn-chip-action.edit:hover { background: #f1f5f9; color: #0f172a; }
+        .td-btn-chip-action.del { color: #94a3b8; }
+        .td-btn-chip-action.del:hover { background: #fef2f2; color: #ef4444; }
 
         .td-record-btn {
           background-color: #2563eb;

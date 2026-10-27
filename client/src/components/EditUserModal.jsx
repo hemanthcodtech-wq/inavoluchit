@@ -27,6 +27,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [memberId, setMemberId] = useState('');
   const [gender, setGender] = useState('Male');
+  const [age, setAge] = useState('');
   const [dob, setDob] = useState('');
   const [occupation, setOccupation] = useState('');
   const [address, setAddress] = useState('');
@@ -72,6 +73,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
       setWhatsappNumber(user.whatsappNumber || '');
       setMemberId(user.memberId || '');
       setGender(user.gender || 'Male');
+      setAge(user.age || '');
       setDob(user.dob ? user.dob.split('T')[0] : '');
       setOccupation(user.occupation || '');
       setAddress(user.address || '');
@@ -133,6 +135,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         whatsappNumber,
         memberId,
         gender,
+        age,
         dob,
         occupation,
         address,
@@ -438,11 +441,14 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                 </div>
 
                 <div>
-                  <label style={labelStyle}>Date of Birth</label>
+                  <label style={labelStyle}>Age (Years)</label>
                   <input
-                    type="date"
-                    value={dob}
-                    onChange={(e) => setDob(e.target.value)}
+                    type="number"
+                    min="1"
+                    max="120"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="e.g. 35"
                     style={inputStyle}
                   />
                 </div>

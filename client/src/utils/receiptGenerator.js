@@ -74,6 +74,16 @@ export const generatePaymentReceiptPDF = async (payment = {}, chit = {}, user = 
     const pendingAmount = isApproved ? 0 : (extraData?.pendingAmount ?? dueAmount);
     const amountReceived = isApproved ? dueAmount : (extraData?.amountReceived ?? 0);
 
+    const remainingDue = extraData?.remainingDue !== undefined 
+      ? Number(extraData.remainingDue)
+      : (payment?.remainingDue !== undefined ? Number(payment.remainingDue) : (isApproved ? 0 : dueAmount));
+
+    const excessAmount = extraData?.excessAmount !== undefined 
+      ? Number(extraData.excessAmount) 
+      : (payment?.excessAmount !== undefined ? Number(payment.excessAmount) : (amountReceived > dueAmount ? (amountReceived - dueAmount) : 0));
+
+    const digitalSignatureHash = payment?.digitalSignature?.hash || extraData?.digitalSignature?.hash || `INA-AUTH-${String(payment?.id || payment?._id || '1088').slice(-8).toUpperCase()}`;
+
     const paymentMode = payment?.paymentMode || extraData?.paymentMode || (payment?.transactionId ? 'UPI' : 'UPI');
 
     let daysLate = 0;
@@ -322,32 +332,41 @@ export const generatePaymentReceiptPDF = async (payment = {}, chit = {}, user = 
 
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
           <div style="flex: 1 1 220px; background-color: #eff6ff; border: 1.5px solid #a5b4fc; border-radius: 8px; padding: 10px 12px; box-sizing: border-box;">
-            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 6px;">
-              <span style="font-size: 12px; color: #2563eb;">✓</span>
-              <span style="font-size: 10.5px; font-weight: 800; color: #1d4ed8; letter-spacing: 0.4px; text-transform: uppercase;">
-                PAYMENT VERIFIED & CONFIRMED
+            <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+              <span style="font-size: 13px; color: #16a34a; font-weight: 900;">✓</span>
+              <span style="font-size: 10px; font-weight: 800; color: #1d4ed8; letter-spacing: 0.4px; text-transform: uppercase;">
+                DIGITALLY SIGNED & AUTHENTICATED
               </span>
             </div>
-            <div style="font-size: 10px; color: #2563eb; line-height: 1.5; font-weight: 500;">
-              <div>• Genuine Authorized Digital Receipt</div>
-              <div>• Reference: <span style="font-weight: 700; word-break: break-all;">${transactionUtr}</span></div>
-              <div>• InaVolu Chit Funds Pvt Ltd</div>
+            <div style="font-size: 9.5px; color: #1e40af; line-height: 1.55; font-weight: 500;">
+              <div>• Authorized Signatory: <strong>InaVolu Chit Funds Pvt Ltd</strong></div>
+              <div>• Digital Auth Code: <span style="font-weight: 800; color: #0f172a; word-break: break-all;">${digitalSignatureHash}</span></div>
+              <div>• Timestamp: ${paymentDateStr} | Verified Digitally</div>
+              <div style="font-size: 8.5px; color: #64748b; margin-top: 3px;">Legally authenticated tax invoice / receipt.</div>
             </div>
           </div>
 
           <div style="flex: 1 1 220px;">
             <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; margin-bottom: 8px;">
               <div style="display: flex; justify-content: space-between; color: #64748b; font-weight: 600;">
-                <span style="color: #64748b;">Base Due:</span>
+                <span style="color: #64748b;">Base Monthly Due:</span>
                 <span style="color: #0f172a;">${formatCurrency(baseMonthlyDue)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; color: #64748b; font-weight: 600;">
-                <span style="color: #64748b;">Total Payable:</span>
+                <span style="color: #64748b;">Total Due for Month:</span>
                 <span style="color: #0f172a; font-weight: 700;">${formatCurrency(totalPayable)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; color: #64748b; font-weight: 600;">
-                <span style="color: #64748b;">Pending:</span>
-                <span style="color: ${pendingAmount > 0 ? '#dc2626' : '#2563eb'}; font-weight: 700;">${formatCurrency(pendingAmount)}</span>
+                <span style="color: #64748b;">Remaining Due to Pay:</span>
+                <span style="color: ${remainingDue > 0 ? '#dc2626' : '#16a34a'}; font-weight: 800;">
+                  ${remainingDue > 0 ? formatCurrency(remainingDue) : '₹0 (Fully Paid)'}
+                </span>
+              </div>
+              <div style="display: flex; justify-content: space-between; color: #64748b; font-weight: 600;">
+                <span style="color: #64748b;">Excess Balance with Us:</span>
+                <span style="color: ${excessAmount > 0 ? '#d97706' : '#64748b'}; font-weight: 800;">
+                  ${excessAmount > 0 ? `${formatCurrency(excessAmount)} (Advance)` : '₹0 (Nil)'}
+                </span>
               </div>
             </div>
 
