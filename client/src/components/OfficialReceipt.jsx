@@ -306,7 +306,7 @@ export const OfficialPaymentReceipt = ({
           >
             <span style={{ fontWeight: 700, color: '#ffffff' }}>Registered Office:</span> ABR Building, 1st Floor, Door No. 9S-1271, Kadapa - Bengaluru Hwy, Opp: Viswam Engineering College, Angallu, Madanapalle, Andhra Pradesh – 517326.
             <br />
-            <span style={{ fontWeight: 700, color: '#ffffff' }}>Contact:</span> 8500319890 | <span style={{ fontWeight: 700, color: '#ffffff' }}>Website:</span> www.inavolu.com
+            <span style={{ fontWeight: 700, color: '#ffffff' }}>Contact:</span> +91 99480 74173 | <span style={{ fontWeight: 700, color: '#ffffff' }}>CIN:</span> U65992AP2021PTC118942
           </p>
         </div>
       </div>

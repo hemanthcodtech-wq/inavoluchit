@@ -1,9 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import OfficialPaymentReceipt from './OfficialReceipt';
-import { generatePaymentReceiptPDF } from '../utils/receiptGenerator';
+import { generatePaymentReceiptPDF, generatePaymentReceiptImage, copyReceiptImageToClipboard } from '../utils/receiptGenerator';
 
 export const ReceiptModal = ({ isOpen, onClose, payment = {}, chit = {}, user = {}, extraData = {} }) => {
   const receiptRef = useRef(null);
+  const [downloadingImg, setDownloadingImg] = useState(false);
+  const [copiedImg, setCopiedImg] = useState(false);
 
   if (!isOpen) return null;
 
@@ -15,7 +17,7 @@ export const ReceiptModal = ({ isOpen, onClose, payment = {}, chit = {}, user = 
     const yr = String(pDateObj.getFullYear()).slice(-2);
     const mo = String(pDateObj.getMonth() + 1).padStart(2, '0');
     const tail = String(pId || Math.floor(100 + Math.random() * 900)).replace(/\D/g, '').slice(-3) || '610';
-    return `ANR${yr}${mo}${tail}`;
+    return `INA${yr}${mo}${tail}`;
   };
 
   const paymentDateObj = payment?.createdAt ? new Date(payment.createdAt) : new Date();
@@ -27,6 +29,36 @@ export const ReceiptModal = ({ isOpen, onClose, payment = {}, chit = {}, user = 
     } catch (err) {
       console.error('Error generating receipt PDF:', err);
       alert('Could not download receipt: ' + err.message);
+    }
+  };
+
+  const handleDownloadImage = async () => {
+    try {
+      setDownloadingImg(true);
+      await generatePaymentReceiptImage(payment, targetChit, targetUser, extraData);
+    } catch (err) {
+      console.error('Error downloading receipt image:', err);
+      alert('Could not download receipt image: ' + (err.message || ''));
+    } finally {
+      setDownloadingImg(false);
+    }
+  };
+
+  const handleCopyImage = async () => {
+    try {
+      setDownloadingImg(true);
+      const res = await generatePaymentReceiptImage(payment, targetChit, targetUser, extraData);
+      if (res && res.blob) {
+        const ok = await copyReceiptImageToClipboard(res.blob);
+        if (ok) {
+          setCopiedImg(true);
+          setTimeout(() => setCopiedImg(false), 3000);
+        }
+      }
+    } catch (err) {
+      console.error('Error copying receipt image:', err);
+    } finally {
+      setDownloadingImg(false);
     }
   };
 
@@ -151,6 +183,53 @@ export const ReceiptModal = ({ isOpen, onClose, payment = {}, chit = {}, user = 
             </button>
             <button
               type="button"
+              onClick={handleDownloadImage}
+              disabled={downloadingImg}
+              title="Download receipt as PNG picture"
+              style={{
+                padding: '0.4rem 0.75rem',
+                backgroundColor: '#16a34a',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '0.8rem',
+                cursor: downloadingImg ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                minHeight: '32px',
+                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)'
+              }}
+            >
+              <span>🖼️</span>
+              <span className="receipt-btn-text">{downloadingImg ? 'Generating...' : 'Save Picture'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCopyImage}
+              disabled={downloadingImg}
+              title="Copy receipt picture to clipboard (Ctrl+V into WhatsApp)"
+              style={{
+                padding: '0.4rem 0.65rem',
+                backgroundColor: copiedImg ? '#15803d' : 'rgba(255, 255, 255, 0.12)',
+                color: '#ffffff',
+                border: '1px solid rgba(255, 255, 255, 0.25)',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '0.78rem',
+                cursor: downloadingImg ? 'wait' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                minHeight: '32px'
+              }}
+            >
+              <span>{copiedImg ? '✓' : '📋'}</span>
+              <span className="receipt-btn-text">{copiedImg ? 'Copied!' : 'Copy Pic'}</span>
+            </button>
+            <button
+              type="button"
               onClick={handleDownloadPDF}
               className="receipt-btn-download"
               style={{
@@ -166,7 +245,7 @@ export const ReceiptModal = ({ isOpen, onClose, payment = {}, chit = {}, user = 
                 alignItems: 'center',
                 gap: '0.3rem',
                 minHeight: '32px',
-                boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)'
+                boxShadow: '0 2px 6px rgba(37, 99, 235, 0.3)'
               }}
             >
               <span>⬇️</span>

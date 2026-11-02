@@ -127,7 +127,7 @@ const createReceiptPdfBuffer = async ({
         .fontSize(7.5)
         .font('Helvetica')
         .text(
-          'Regd Office: ABR Building, 1st Floor, Door No. 9S-1271, Kadapa - Bengaluru Hwy, Opp: Viswam Engineering College, Angallu, Madanapalle, Andhra Pradesh – 517326.\nContact: +91 8500319890 | Website: www.inavolu.com | CIN: U65992AP2021PTC118942',
+          'Regd Office: ABR Building, 1st Floor, Door No. 9S-1271, Kadapa - Bengaluru Hwy, Opp: Viswam Engineering College, Angallu, Madanapalle, Andhra Pradesh – 517326.\nContact: +91 99480 74173 | CIN: U65992AP2021PTC118942',
           leftMargin + 15,
           headerTop + 45,
           { width: contentWidth - 30, align: 'left', lineGap: 2.5 }
@@ -325,7 +325,7 @@ const createReceiptPdfBuffer = async ({
       // ================= 6. FOOTER =================
       doc.fillColor('#94a3b8').fontSize(7.5).font('Helvetica')
         .text(
-          'This is a computer-generated official receipt issued by InaVolu Chit Funds Private Limited. No physical signature is required.\nFor queries or ledger updates, visit https://inavoluchit.netlify.app or call +91 8500319890.',
+          'This is a computer-generated official receipt issued by InaVolu Chit Funds Private Limited. No physical signature is required.\nFor queries or ledger updates, call +91 99480 74173.',
           leftMargin,
           curY,
           { width: contentWidth, align: 'center', lineGap: 2 }
@@ -381,7 +381,7 @@ const uploadReceiptToCloudinary = async (pdfBuffer, receiptNo) => {
 };
 
 /**
- * Generate official WhatsApp Receipt message text
+ * Generate official WhatsApp Receipt message text (Clean, Catchy & Official - No Domain / Links)
  */
 const formatWhatsAppReceiptMessage = ({
   userName,
@@ -397,53 +397,39 @@ const formatWhatsAppReceiptMessage = ({
   totalPaidSoFar,
   remainingDue,
   excessAmount,
-  receiptUrl,
-  brandedReceiptUrl,
   digitalSignatureHash
 }) => {
-  const formattedPaid = Number(amountPaid).toLocaleString('en-IN');
-  const formattedDue = Number(totalDue).toLocaleString('en-IN');
-  const formattedRem = Number(remainingDue).toLocaleString('en-IN');
-  const formattedExcess = Number(excessAmount).toLocaleString('en-IN');
+  const formattedPaid = Number(amountPaid || 0).toLocaleString('en-IN');
+  const formattedRem = Number(remainingDue || 0).toLocaleString('en-IN');
+  const formattedExcess = Number(excessAmount || 0).toLocaleString('en-IN');
 
   const dueStatusText = remainingDue === 0
-    ? 'Rs. 0 (Fully Cleared - No Dues) '
-    : `Rs. ${formattedRem} (Balance Due to Pay) `;
+    ? 'Rs. 0 (Cleared)'
+    : `Rs. ${formattedRem} (Due)`;
 
   const excessStatusText = excessAmount > 0
-    ? `Rs. ${formattedExcess} (Excess Advance with Us) `
+    ? `Rs. ${formattedExcess} (Advance)`
     : 'Rs. 0 (Nil)';
-
-  // Official Branded Receipt Link without third-party / Cloudinary in URL
-  const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://www.inavolu.com').replace(/\/+$/, '');
-  const officialReceiptLink = brandedReceiptUrl || (receiptNo ? `${appBaseUrl}/receipt/${receiptNo}` : receiptUrl);
 
   return (
     `*INAVOLU CHIT FUNDS PRIVATE LIMITED*\n` +
     `*OFFICIAL PAYMENT RECEIPT*\n\n` +
     `Dear *${userName || 'Member'}*,\n` +
-    `Your chit payment has been successfully recorded and verified.\n\n` +
-    ` *Chit Scheme:* ${chitName || 'Chit Scheme'}\n` +
-    ` *Member ID:* ${memberId || 'Member'}\n` +
-    ` *Installment:* Month ${monthNumber} (${monthName})\n` +
-    ` *Amount Paid:* Rs. ${formattedPaid}\n` +
-    ` *Payment Mode:* ${paymentMode || 'Cash'}\n` +
-    ` *Receipt No:* ${receiptNo}\n` +
-    ` *Payment Date:* ${paymentDateStr}\n\n` +
-    ` *PAYMENT & DUE SUMMARY:*\n` +
-    `• Month Payable Due: Rs. ${formattedDue}\n` +
-    `• Amount Paid in this Receipt: Rs. ${formattedPaid}\n` +
-    `• Total Paid for Month: Rs. ${Number(totalPaidSoFar).toLocaleString('en-IN')}\n` +
-    `• *Remaining Due to Pay:* ${dueStatusText}\n` +
-    `• *Excess Balance with Us:* ${excessStatusText}\n\n` +
-    ` *DIGITAL SIGNATURE:*\n` +
-    `Digitally Signed & Authenticated by InaVolu Chit Funds Pvt Ltd\n` +
+    `Your chit installment payment has been successfully recorded.\n\n` +
+    `Receipt No: ${receiptNo}\n` +
+    `Chit Group: ${chitName || 'Chit Scheme'}\n` +
+    `Member ID: ${memberId || 'Member'}\n` +
+    `Installment: Month ${monthNumber} (${monthName})\n` +
+    `Amount Paid: Rs. ${formattedPaid}\n` +
+    `Payment Mode: ${paymentMode || 'Cash'}\n` +
+    `Payment Date: ${paymentDateStr}\n\n` +
+    `Due Status:\n` +
+    `• Remaining Due: ${dueStatusText}\n` +
+    `• Excess Balance: ${excessStatusText}\n` +
     `Auth Code: ${digitalSignatureHash || 'INA-AUTH-SYSTEM'}\n\n` +
-    ` *Download / View Official Receipt (PDF):*\n` +
-    `${officialReceiptLink}\n\n` +
     `Thank you for being a valued member!\n` +
     `*InaVolu Chit Funds Private Limited*\n` +
-    `Contact: +91 8500319890 | Web: www.inavolu.com`
+    `Helpline: +91 99480 74173`
   );
 };
 

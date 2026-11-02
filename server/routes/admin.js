@@ -1108,7 +1108,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       `${appBaseUrl}/dashboard\n\n` +
       `Thank you,\n` +
       `*InaVolu Chit Funds Private Limited*\n` +
-      `📞 Helpline: +91 8500319890 | 🌐 Web: www.inavolu.com`;
+      `📞 Helpline: +91 99480 74173 | 🌐 Web: www.inavolu.com`;
 
     res.json({
       success: true,

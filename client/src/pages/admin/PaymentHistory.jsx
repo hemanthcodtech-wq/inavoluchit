@@ -33,12 +33,18 @@ import {
   CheckCheck,
   Sparkles,
   Receipt,
-  ArrowUpDown
+  ArrowUpDown,
+  Image as ImageIcon
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { generatePaymentReceiptPDF } from '../../utils/receiptGenerator';
+import {
+  generatePaymentReceiptPDF,
+  generatePaymentReceiptImage,
+  copyReceiptImageToClipboard,
+  formatWhatsAppReceiptText
+} from '../../utils/receiptGenerator';
 import ReceiptModal from '../../components/ReceiptModal';
 
 const APP_BASE_URL = (import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://www.inavolu.com')).replace(/\/+$/, '');
@@ -1715,19 +1721,114 @@ const PaymentHistory = () => {
                               <Download size={13} />
                             </button>
 
+                            {/* Download Receipt Picture (PNG) */}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  await generatePaymentReceiptImage(p, p.chit, p.user, {
+                                    memberName: p.user?.name,
+                                    memberId: p.user?.memberId,
+                                    mobileNumber: p.user?.phone,
+                                    chitGroup: p.chit?.name,
+                                    dueAmount: p.dueAmount || p.amount,
+                                    remainingDue: p.remainingDue ?? 0,
+                                    excessAmount: p.excessAmount ?? 0,
+                                    receiptNo: p.receiptNo,
+                                    digitalSignature: p.digitalSignature,
+                                    paymentMode: p.paymentMode,
+                                    paymentDate: p.paymentDate || p.createdAt,
+                                    transactionId: p.transactionId
+                                  });
+                                } catch (err) {
+                                  console.error('Error downloading receipt image:', err);
+                                  alert('Could not download receipt image: ' + (err.message || ''));
+                                }
+                              }}
+                              title="Download receipt as PNG picture"
+                              style={{
+                                padding: '0.35rem 0.55rem',
+                                borderRadius: '6px',
+                                border: '1px solid #fed7aa',
+                                backgroundColor: '#fff7ed',
+                                color: '#ea580c',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                              }}
+                            >
+                              <ImageIcon size={13} />
+                            </button>
+
                             {/* WhatsApp Receipt Notice */}
                             <button
-                              onClick={() => {
+                              onClick={async () => {
                                 const rawPhone = p.user?.whatsappNumber || p.user?.phone || '';
                                 const cleanDigits = rawPhone.replace(/\D/g, '');
                                 const phone10 = cleanDigits.slice(-10);
                                 const fullPhone = phone10 ? `91${phone10}` : '';
-                                const receiptLink = p.receiptNo ? `${APP_BASE_URL}/receipt/${p.receiptNo}` : p.receiptUrl;
-                                const text = p.whatsappText || `*INAVOLU CHIT FUNDS - OFFICIAL RECEIPT*\nDear ${p.user?.name || 'Member'},\nPayment of ₹${Number(p.amount).toLocaleString('en-IN')} for Month ${p.monthNumber} is confirmed.\n${receiptLink ? `Download / View Official Receipt (PDF): ${receiptLink}` : ''}`;
-                                const url = fullPhone ? `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(text)}` : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+
+                                let imgBlob = null;
+                                const receiptNo = p.receiptNo || 'INA';
+
+                                try {
+                                  const imgRes = await generatePaymentReceiptImage(p, p.chit, p.user, {
+                                    memberName: p.user?.name,
+                                    memberId: p.user?.memberId,
+                                    mobileNumber: p.user?.phone,
+                                    chitGroup: p.chit?.name,
+                                    dueAmount: p.dueAmount || p.amount,
+                                    remainingDue: p.remainingDue ?? 0,
+                                    excessAmount: p.excessAmount ?? 0,
+                                    receiptNo,
+                                    digitalSignature: p.digitalSignature,
+                                    paymentMode: p.paymentMode,
+                                    paymentDate: p.paymentDate || p.createdAt,
+                                    transactionId: p.transactionId
+                                  });
+                                  if (imgRes && imgRes.blob) {
+                                    imgBlob = imgRes.blob;
+                                    await copyReceiptImageToClipboard(imgRes.blob);
+                                  }
+                                } catch (e) {}
+
+                                const text = formatWhatsAppReceiptText({
+                                  userName: p.user?.name,
+                                  memberId: p.user?.memberId,
+                                  chitName: p.chit?.name,
+                                  monthNumber: p.monthNumber,
+                                  amountPaid: p.amount,
+                                  paymentMode: p.paymentMode,
+                                  receiptNo,
+                                  paymentDateStr: p.paymentDate ? new Date(p.paymentDate).toLocaleDateString('en-GB') : new Date().toLocaleDateString('en-GB'),
+                                  remainingDue: p.remainingDue ?? 0,
+                                  excessAmount: p.excessAmount ?? 0,
+                                  digitalSignatureHash: p.digitalSignature?.hash
+                                });
+
+                                // On Mobile devices with Web Share: share image file directly to WhatsApp
+                                if (imgBlob && typeof navigator !== 'undefined' && navigator.canShare) {
+                                  try {
+                                    const file = new File([imgBlob], `Payment_Receipt_${receiptNo}.png`, { type: 'image/png' });
+                                    if (navigator.canShare({ files: [file] })) {
+                                      await navigator.share({
+                                        files: [file],
+                                        text,
+                                        title: `Payment Receipt #${receiptNo}`
+                                      });
+                                      return;
+                                    }
+                                  } catch (shareErr) {
+                                    if (shareErr.name === 'AbortError') return;
+                                  }
+                                }
+
+                                const url = fullPhone
+                                  ? `https://api.whatsapp.com/send?phone=${fullPhone}&text=${encodeURIComponent(text)}`
+                                  : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
                                 window.open(url, '_blank');
                               }}
-                              title="Send official receipt to member WhatsApp"
+                              title="Send official receipt to member WhatsApp (Auto-copies picture)"
                               style={{
                                 padding: '0.35rem 0.55rem',
                                 borderRadius: '6px',

@@ -190,7 +190,7 @@ const PublicReceiptPage = () => {
             Go to Home
           </Link>
           <a
-            href="tel:+918500319890"
+            href="tel:+919948074173"
             style={{
               padding: '0.65rem 1.4rem',
               borderRadius: '10px',
@@ -202,7 +202,7 @@ const PublicReceiptPage = () => {
               textDecoration: 'none'
             }}
           >
-            Contact Helpline: +91 8500319890
+            Contact Helpline: +91 99480 74173
           </a>
         </div>
       </div>
@@ -396,7 +396,7 @@ const PublicReceiptPage = () => {
                 maxWidth: '560px'
               }}>
                 Regd Office: ABR Building, Kadapa - Bengaluru Hwy, Angallu, Madanapalle, AP – 517326.<br />
-                CIN: U65992AP2021PTC118942 • Helpline: +91 8500319890 • Web: www.inavolu.com
+                CIN: U65992AP2021PTC118942 • Helpline: +91 99480 74173
               </p>
             </div>
 
@@ -619,7 +619,7 @@ const PublicReceiptPage = () => {
           fontSize: '0.76rem',
           color: '#64748b'
         }}>
-          Thank you for being a valued member of InaVolu Chit Funds Private Limited • Official Portal: www.inavolu.com • Helpline: +91 8500319890
+          Thank you for being a valued member of InaVolu Chit Funds Private Limited • Helpline: +91 99480 74173
         </div>
       </div>
 

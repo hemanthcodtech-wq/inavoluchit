@@ -145,7 +145,7 @@ const SetMonthlyDueModal = ({ isOpen, onClose, chit, initialMonth, members: pass
       `${APP_BASE_URL}/dashboard\n\n` +
       `Thank you,\n` +
       `*InaVolu Chit Funds Private Limited*\n` +
-      `📞 Helpline: +91 8500319890 | 🌐 Web: www.inavolu.com`;
+      `📞 Helpline: +91 99480 74173 | 🌐 Web: www.inavolu.com`;
   };
 
   const handleSubmit = async (e) => {
