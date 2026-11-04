@@ -2,23 +2,11 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const { User, AuditLog } = require('../models');
 const { protect } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
 const { logAuditEvent } = require('../utils/auditLogger');
-const { sendPasswordResetOtpEmail } = require('../utils/mailer');
-
 const { generateNextMemberId } = require('../utils/memberIdHelper');
-
-// Configure nodemailer transport
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'secretkey123', {
@@ -635,51 +623,35 @@ router.post('/verify-otp', (req, res) => {
 });
 
 // @route   POST /api/auth/forgot-password
-// @desc    Initiate password reset: generate OTP and send via Nodemailer SMTP
+// @desc    Initiate password reset request
 // @access  Public
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email || !email.trim()) {
-      return res.status(400).json({ success: false, message: 'Please enter your registered email address.' });
+      return res.status(400).json({ success: false, message: 'Please enter your registered email address or Member ID.' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
+    const user = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { memberId: email.trim().toUpperCase() }
+      ]
+    });
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No account found with this email address.' });
+      return res.status(404).json({ success: false, message: 'No registered account found with these details.' });
     }
 
-    // Generate 6-digit OTP code
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-    // Save OTP & expiry to user record
-    await User.findByIdAndUpdate(user.id, { otp, otpExpires });
-
-    // Send email using Nodemailer utility
-    try {
-      await sendPasswordResetOtpEmail({
-        toEmail: user.email,
-        userName: user.name,
-        otp
-      });
-    } catch (mailError) {
-      console.error('Failed to send OTP email via SMTP:', mailError);
-      return res.status(500).json({
-        success: false,
-        message: 'Could not send verification email. Please check server SMTP configuration.'
-      });
-    }
-
-    res.json({
+    return res.json({
       success: true,
-      message: `Verification code sent to ${user.email}. Please check your inbox or spam folder.`
+      message: 'Password reset request acknowledged. Please contact InaVolu Chit Funds helpline at +91 99480 74173 or connect via WhatsApp for fast security verification and password reset.',
+      helpline: '+91 99480 74173'
     });
   } catch (error) {
     console.error('Error in forgot-password:', error);
-    res.status(500).json({ success: false, message: 'Server error sending password reset OTP' });
+    res.status(500).json({ success: false, message: 'Server error processing password reset request' });
   }
 });
 

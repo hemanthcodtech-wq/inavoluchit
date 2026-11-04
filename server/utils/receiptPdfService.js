@@ -493,8 +493,8 @@ const generateAndUploadReceipt = async ({
   const monthName = formatMonthYearStr(chit?.startDate, mNum);
   const paymentDateStr = formatDateStr(pDate);
 
-  // Generate branded inavolu.com official receipt link (Zero Cloudinary in URL)
-  const appBaseUrl = process.env.APP_URL || 'https://www.inavolu.com';
+  // Generate branded inavolu.in official receipt link (Zero Cloudinary in URL)
+  const appBaseUrl = process.env.APP_URL || 'https://inavolu.in';
   const brandedReceiptUrl = `${appBaseUrl.replace(/\/+$/, '')}/receipt/${receiptNo}`;
 
   // Format WhatsApp Message

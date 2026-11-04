@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import ScrollAnimationWrapper from '../components/ScrollAnimationWrapper';
-import { Mail, Phone, MapPin, Send, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MessageSquare, Clock, Send, CheckCircle, Globe } from 'lucide-react';
 
 const Contact = () => {
   const [name, setName] = useState('');
@@ -35,42 +35,60 @@ const Contact = () => {
         <ScrollAnimationWrapper>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             <div className="card-premium">
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Office Address</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem' }}>Help & Support</h2>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                  <MapPin size={22} color="var(--accent-yellow-dark)" style={{ marginTop: '3px' }} />
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <Phone size={22} color="var(--accent-yellow-dark)" />
                   <div>
-                    <h4 style={{ fontWeight: 600 }}>Head Office</h4>
-                    <p style={{ color: 'var(--color-secondary)', fontSize: '0.95rem' }}>
-                      104 Financial Towers, 2nd Cross Street,<br />
-                      Tech City, Bengaluru, KA - 560001
+                    <h4 style={{ fontWeight: 600 }}>Helpline</h4>
+                    <p style={{ margin: 0 }}>
+                      <a href="tel:+919948074173" style={{ color: 'var(--color-primary-green)', fontWeight: 700, textDecoration: 'none', fontSize: '1.05rem' }}>
+                        +91 99480 74173
+                      </a>
                     </p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <Phone size={22} color="var(--accent-yellow-dark)" />
+                  <MessageSquare size={22} color="#25D366" />
                   <div>
-                    <h4 style={{ fontWeight: 600 }}>Call Support</h4>
-                    <p style={{ color: 'var(--color-secondary)', fontSize: '0.95rem' }}>+91 80 4912 3456</p>
+                    <h4 style={{ fontWeight: 600 }}>WhatsApp Support</h4>
+                    <p style={{ margin: 0 }}>
+                      <a 
+                        href="https://wa.me/919948074173?text=Hello%20InaVolu%20Chits%2C%20I%20have%20an%20inquiry%20regarding%20chit%20schemes." 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ color: '#16a34a', fontWeight: 700, textDecoration: 'none', fontSize: '0.95rem' }}
+                      >
+                        Chat on +91 99480 74173
+                      </a>
+                    </p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <Mail size={22} color="var(--accent-yellow-dark)" />
+                  <Globe size={22} color="var(--accent-yellow-dark)" />
                   <div>
-                    <h4 style={{ fontWeight: 600 }}>Email Inquiries</h4>
-                    <p style={{ color: 'var(--color-secondary)', fontSize: '0.95rem' }}>support@chitfund.com</p>
+                    <h4 style={{ fontWeight: 600 }}>Official Website</h4>
+                    <p style={{ color: 'var(--color-secondary)', fontSize: '0.95rem', margin: 0 }}>inavolu.in</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <Clock size={22} color="var(--accent-yellow-dark)" />
+                  <div>
+                    <h4 style={{ fontWeight: 600 }}>Working Hours</h4>
+                    <p style={{ color: 'var(--color-secondary)', fontSize: '0.95rem', margin: 0 }}>Mon - Sat: 9:30 AM - 6:30 PM</p>
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="card-premium" style={{ backgroundColor: 'var(--accent-yellow-light)', border: '1px solid var(--accent-yellow)' }}>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verification Notice</h3>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem' }}>Member Notice</h3>
               <p style={{ fontSize: '0.9rem', color: 'var(--color-secondary)', lineHeight: '1.5' }}>
-                For urgent profile or registration approvals, please call support with your registered email and Aadhar ID details.
+                For profile verification, chit slot inquiries, or payment approvals, please call or WhatsApp our helpline at <strong>+91 99480 74173</strong>.
               </p>
             </div>
           </div>

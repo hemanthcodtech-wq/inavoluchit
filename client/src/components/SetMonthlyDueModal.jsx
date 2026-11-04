@@ -24,7 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { formatChitMonthYear, formatChitMonthFull, formatChitMonthWithNum } from '../utils/chitDateUtils';
 
-const APP_BASE_URL = (import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://www.inavolu.com')).replace(/\/+$/, '');
+const APP_BASE_URL = (import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://inavolu.in')).replace(/\/+$/, '');
 
 const SetMonthlyDueModal = ({ isOpen, onClose, chit, initialMonth, members: passedMembers, onDueUpdated }) => {
   const { token, API_URL } = useAuth();
@@ -145,7 +145,7 @@ const SetMonthlyDueModal = ({ isOpen, onClose, chit, initialMonth, members: pass
       `${APP_BASE_URL}/dashboard\n\n` +
       `Thank you,\n` +
       `*InaVolu Chit Funds Private Limited*\n` +
-      `📞 Helpline: +91 99480 74173 | 🌐 Web: www.inavolu.com`;
+      `📞 Helpline: +91 99480 74173 | 🌐 Web: inavolu.in`;
   };
 
   const handleSubmit = async (e) => {

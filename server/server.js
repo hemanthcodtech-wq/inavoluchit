@@ -15,17 +15,14 @@ connectDB();
 
 const app = express();
 
-// Middleware - Explicit CORS headers for Hostinger CDN & Cross-Origin Requests
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
-app.use(cors());
+// Middleware - Robust CORS headers for Vercel, Production Custom Domains & Local Dev
+const corsOptions = {
+  origin: true, // Dynamically reflect the request origin (supports https://inavolu.in, *.vercel.app, localhost)
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -74,9 +71,13 @@ app.get(['/receipts/:receiptNo', '/receipts/:receiptNo.pdf', '/receipt/:receiptN
   }
 });
 
-// Base Route
+// Health Check & Base Route
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the ChitFund Management Platform API' });
+  res.json({ message: 'Welcome to the InaVolu ChitFund API Platform', status: 'online' });
 });
 
 const updateLegacyAuditLogs = async () => {
@@ -91,7 +92,7 @@ const updateLegacyAuditLogs = async () => {
 // Start Server after seeding and audit log migration
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on port ${PORT}`);
   await seedSuperadmin();
   await updateLegacyAuditLogs();

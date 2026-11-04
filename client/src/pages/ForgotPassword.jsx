@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -36,11 +36,11 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
 
-  // Step 1: Send OTP to Email
+  // Step 1: Send Request to Administrator
   const handleSendOtp = async (e) => {
     e.preventDefault();
     if (!email || !email.trim()) {
-      setError('Please enter your registered email address.');
+      setError('Please enter your registered email address or Member ID.');
       return;
     }
     setError('');
@@ -54,14 +54,14 @@ const ForgotPassword = () => {
       });
       const data = await res.json();
       if (data.success) {
-        setInfoMessage(data.message || 'OTP verification code sent to your email.');
+        setInfoMessage(data.message || 'Password reset request recorded. Please reach out to our administrator.');
         setStep(2);
       } else {
-        setError(data.message || 'Failed to send OTP code.');
+        setError(data.message || 'Account not found. Please verify your details.');
       }
     } catch (err) {
-      console.error('Error sending reset OTP:', err);
-      setError('Connection error sending verification email.');
+      console.error('Error submitting reset request:', err);
+      setError('Connection error. You can directly contact our helpline at +91 99480 74173.');
     } finally {
       setLoading(false);
     }
@@ -219,19 +219,19 @@ const ForgotPassword = () => {
           </div>
         )}
 
-        {/* STEP 1: ENTER EMAIL */}
+        {/* STEP 1: ENTER EMAIL OR MEMBER ID */}
         {step === 1 && (
           <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem' }}>
-                Email Address
+                Email Address or Member ID
               </label>
               <div style={{ position: 'relative' }}>
                 <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
                 <input
-                  type="email"
+                  type="text"
                   required
-                  placeholder="e.g. member@gmail.com"
+                  placeholder="e.g. INA101 or member@gmail.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={{
@@ -268,78 +268,139 @@ const ForgotPassword = () => {
               {loading ? (
                 <>
                   <RefreshCw size={18} className="spin" />
-                  <span>Sending Verification Email...</span>
+                  <span>Submitting Request...</span>
                 </>
               ) : (
                 <>
                   <KeyRound size={18} />
-                  <span>Send Reset OTP</span>
+                  <span>Request Password Reset</span>
                   <ArrowRight size={18} />
                 </>
               )}
             </button>
+
+            {/* Helpline Fast Contact */}
+            <div style={{
+              marginTop: '0.5rem',
+              padding: '1rem',
+              backgroundColor: '#f8fafc',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.82rem', color: '#475569', fontWeight: 600 }}>
+                Need instant assistance with your account?
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <a
+                  href="https://wa.me/919948074173?text=Hello%20InaVolu%20Chits%2C%20I%20need%20help%20with%20my%20account%20password."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    backgroundColor: '#25D366',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  WhatsApp Support
+                </a>
+                <a
+                  href="tel:+919948074173"
+                  style={{
+                    padding: '0.45rem 0.9rem',
+                    backgroundColor: '#1e6b3e',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  Call +91 99480 74173
+                </a>
+              </div>
+            </div>
           </form>
         )}
 
-        {/* STEP 2: ENTER OTP */}
+        {/* STEP 2: HELPLINE & ADMIN VERIFICATION */}
         {step === 2 && (
-          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#374151', marginBottom: '0.4rem', textAlign: 'center' }}>
-                6-Digit Verification Code
-              </label>
-              <input
-                type="text"
-                maxLength={6}
-                required
-                placeholder="123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '52px',
-                  textAlign: 'center',
-                  fontSize: '1.6rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.4em',
-                  borderRadius: '10px',
-                  border: '2px solid var(--color-primary-green)',
-                  backgroundColor: '#f0f0ff',
-                  color: 'var(--color-primary-green)',
-                  outline: 'none'
-                }}
-              />
-              <span style={{ fontSize: '0.75rem', color: '#6b7280', display: 'block', marginTop: '0.4rem', textAlign: 'center' }}>
-                Didn't get the email? Check spam folder or{' '}
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  style={{ color: 'var(--color-primary-green)', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{
+              padding: '1.25rem',
+              backgroundColor: '#f0fdf4',
+              borderRadius: '12px',
+              border: '1px solid #bbf7d0',
+              textAlign: 'center'
+            }}>
+              <CheckCircle size={36} color="#16a34a" style={{ margin: '0 auto 0.75rem auto' }} />
+              <h4 style={{ margin: '0 0 0.5rem 0', color: '#166534', fontSize: '1.05rem', fontWeight: 700 }}>
+                Request Registered
+              </h4>
+              <p style={{ margin: '0 0 1rem 0', fontSize: '0.86rem', color: '#334155', lineHeight: 1.5 }}>
+                For security reasons under Chit Fund regulations, password changes are verified directly by our administration desk.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <a
+                  href={`https://wa.me/919948074173?text=Hello%20InaVolu%20Chits%2C%20my%20registered%20email%2FmemberId%20is%20${encodeURIComponent(email)}.%20Please%20help%20me%20reset%20my%20password.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    padding: '0.7rem',
+                    backgroundColor: '#25D366',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center'
+                  }}
                 >
-                  Resend Code
-                </button>
-              </span>
+                  Verify via WhatsApp (+91 99480 74173)
+                </a>
+                <a
+                  href="tel:+919948074173"
+                  style={{
+                    padding: '0.7rem',
+                    backgroundColor: '#1e6b3e',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    fontSize: '0.92rem',
+                    fontWeight: 700,
+                    textDecoration: 'none',
+                    textAlign: 'center'
+                  }}
+                >
+                  Call Administrator Direct
+                </a>
+              </div>
             </div>
 
             <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary"
+              type="button"
+              onClick={() => setStep(1)}
               style={{
-                width: '100%',
-                height: '48px',
-                borderRadius: '9999px',
-                fontWeight: 700,
-                fontSize: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem'
+                background: 'none',
+                border: 'none',
+                color: '#64748b',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                textAlign: 'center'
               }}
             >
-              {loading ? 'Verifying OTP...' : 'Verify Code & Proceed'}
+              ← Back to enter another email
             </button>
-          </form>
+          </div>
         )}
 
         {/* STEP 3: RESET NEW PASSWORD */}

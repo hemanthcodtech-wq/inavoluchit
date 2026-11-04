@@ -47,7 +47,7 @@ import {
 } from '../../utils/receiptGenerator';
 import ReceiptModal from '../../components/ReceiptModal';
 
-const APP_BASE_URL = (import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://www.inavolu.com')).replace(/\/+$/, '');
+const APP_BASE_URL = (import.meta.env.VITE_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://inavolu.in')).replace(/\/+$/, '');
 
 const PaymentHistory = () => {
 
@@ -1489,7 +1489,7 @@ const PaymentHistory = () => {
                                 <Link
                                   to={`/receipt/${p.receiptNo}`}
                                   target="_blank"
-                                  title="Open Official Branded Receipt on inavolu.com"
+                                  title="Open Official Branded Receipt on inavolu.in"
                                   style={{
                                     display: 'inline-flex',
                                     alignItems: 'center',
@@ -1849,7 +1849,7 @@ const PaymentHistory = () => {
                               <Link
                                 to={`/receipt/${p.receiptNo}`}
                                 target="_blank"
-                                title="Open inavolu.com official receipt portal"
+                                title="Open inavolu.in official receipt portal"
                                 style={{
                                   padding: '0.35rem 0.55rem',
                                   borderRadius: '6px',

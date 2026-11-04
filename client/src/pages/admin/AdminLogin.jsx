@@ -202,7 +202,7 @@ const AdminLogin = () => {
                 e.target.style.borderColor = 'rgba(99, 102, 241, 0.20)';
                 e.target.style.boxShadow = 'none';
               }}
-              placeholder="admin@inavolu.com"
+              placeholder="admin@inavolu.in"
             />
           </div>
 

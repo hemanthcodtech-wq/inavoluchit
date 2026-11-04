@@ -658,7 +658,7 @@ const AuditLog = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0 }}>
                           <User size={13} color="#94a3b8" />
                           <span style={{ fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
-                            {log.userEmail || 'admin@inavolu.com'}
+                            {log.userEmail || 'admin@inavolu.in'}
                           </span>
                           <span style={{
                             fontSize: '0.66rem',
@@ -763,7 +763,7 @@ const AuditLog = () => {
 
                         {/* USER */}
                         <td style={{ padding: '1rem 1.25rem', color: '#0f172a', fontWeight: 600 }}>
-                          {log.userEmail || 'admin@inavolu.com'}
+                          {log.userEmail || 'admin@inavolu.in'}
                         </td>
 
                         {/* ROLE */}

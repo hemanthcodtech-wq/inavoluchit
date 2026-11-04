@@ -31,7 +31,7 @@ const logAuditEvent = async ({
     }
 
     if (!finalUserEmail) {
-      finalUserEmail = 'admin@inavolu.com';
+      finalUserEmail = 'admin@inavolu.in';
     }
     if (!finalUserRole) {
       finalUserRole = 'Super Admin';

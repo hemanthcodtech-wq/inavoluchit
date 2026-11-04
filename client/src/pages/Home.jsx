@@ -1109,22 +1109,20 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Registered Office & Contact Column */}
+          {/* Contact & Helpline Column */}
           <div>
             <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#f8fafc', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: '1.25rem', borderBottom: '2px solid #3b5bdb', paddingBottom: '0.5rem', display: 'inline-block' }}>
-              Registered Office
+              Official Contact
             </h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', color: '#cbd5e1', fontSize: '0.9rem', lineHeight: 1.55 }}>
-              <p style={{ margin: 0 }}>
-                ABR Building, 1st Floor, Door No. 9S-1271,<br />
-                Kadapa - Bengaluru Hwy, Opp: Viswam Engineering College,<br />
-                Angallu, Madanapalle, Andhra Pradesh – 517326.
+              <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>Helpline:</span> +91 99480 74173
               </p>
               <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#f59e0b', fontWeight: 700 }}>Phone:</span> +91 85003 19890
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>WhatsApp:</span> +91 99480 74173
               </p>
               <p style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ color: '#f59e0b', fontWeight: 700 }}>Website:</span> www.inavolu.com
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>Website:</span> inavolu.in
               </p>
               <p style={{ margin: 0, color: '#6ee7b7', fontWeight: 600, fontSize: '0.82rem' }}>
                 Working Hours: Mon - Sat (9:30 AM - 6:30 PM)

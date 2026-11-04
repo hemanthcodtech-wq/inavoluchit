@@ -1055,7 +1055,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       const cleanDigits = rawPhone.replace(/\D/g, '');
       const phone10 = cleanDigits.slice(-10);
       const memberName = u.name || 'Member';
-      const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://www.inavolu.com').replace(/\/+$/, '');
+      const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://inavolu.in').replace(/\/+$/, '');
       const slotLabel = item.slotsCount === 1 
         ? (item.ticketIds[0] || '1 Slot') 
         : `${item.slotsCount} Slots (${item.ticketIds.join(', ') || 'Enrolled'})`;
@@ -1092,7 +1092,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       };
     }).filter(m => m.phone);
 
-    const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://www.inavolu.com').replace(/\/+$/, '');
+    const appBaseUrl = (process.env.APP_URL || process.env.CLIENT_URL || 'https://inavolu.in').replace(/\/+$/, '');
     const commonWhatsAppText = `🔔 *INAVOLU CHIT FUNDS PRIVATE LIMITED* 🔔\n` +
       `*OFFICIAL MONTHLY PAYMENT DUE NOTICE*\n\n` +
       `Dear Members,\n` +
@@ -1108,7 +1108,7 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
       `${appBaseUrl}/dashboard\n\n` +
       `Thank you,\n` +
       `*InaVolu Chit Funds Private Limited*\n` +
-      `📞 Helpline: +91 99480 74173 | 🌐 Web: www.inavolu.com`;
+      `📞 Helpline: +91 99480 74173 | 🌐 Web: inavolu.in`;
 
     res.json({
       success: true,
