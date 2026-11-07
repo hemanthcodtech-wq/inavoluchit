@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
 const { protect, staff } = require('../middleware/authMiddleware');
+const { cloudinary, isCloudinaryConfigured } = require('../config/cloudinary');
 
 // Ensure local uploads directory exists
 const uploadDir = path.join(__dirname, '../uploads');
@@ -75,10 +76,80 @@ const formatBytes = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
+// Helper: Upload file to Cloudinary with fallback to local storage
+const uploadToCloudinary = (file, folder = 'chitfund_documents') => {
+  return new Promise((resolve) => {
+    if (!isCloudinaryConfigured) {
+      return resolve({
+        fileUrl: `/uploads/${file.filename}`,
+        filePublicId: file.filename,
+        storageType: 'Local'
+      });
+    }
+
+    const ext = path.extname(file.originalname).toLowerCase();
+    const isPdf = ext === '.pdf' || file.mimetype === 'application/pdf';
+    const resource_type = isPdf ? 'raw' : 'auto';
+
+    cloudinary.uploader.upload(
+      file.path,
+      {
+        folder,
+        resource_type,
+        use_filename: true,
+        unique_filename: true
+      },
+      (error, result) => {
+        // Remove local temp file
+        try {
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        } catch (e) {}
+
+        if (error) {
+          console.error('Cloudinary document upload error, falling back to local file:', error);
+          return resolve({
+            fileUrl: `/uploads/${file.filename}`,
+            filePublicId: file.filename,
+            storageType: 'Local'
+          });
+        }
+
+        resolve({
+          fileUrl: result.secure_url,
+          filePublicId: result.public_id,
+          storageType: 'Cloudinary'
+        });
+      }
+    );
+  });
+};
+
+// Helper: Delete file from Cloudinary or local disk
+const deleteCloudinaryDoc = async (fileUrl, filePublicId, fileType) => {
+  if (!fileUrl) return;
+  if (fileUrl.includes('cloudinary.com') && filePublicId && isCloudinaryConfigured) {
+    try {
+      const isPdf = fileType === 'PDF' || fileUrl.toLowerCase().endsWith('.pdf');
+      await cloudinary.uploader.destroy(filePublicId, {
+        resource_type: isPdf ? 'raw' : 'image'
+      });
+      console.log(`Cloudinary document deleted: ${filePublicId}`);
+    } catch (e) {
+      console.warn(`Error deleting Cloudinary document ${filePublicId}:`, e.message);
+    }
+  } else if (fileUrl.startsWith('/uploads/')) {
+    const localPath = path.join(__dirname, '..', fileUrl);
+    try {
+      if (fs.existsSync(localPath)) fs.unlinkSync(localPath);
+    } catch (e) {}
+  }
+};
+
 // Valid Categories
 const VALID_CATEGORIES = [
   'All Documents',
   'KYC Documents',
+  'Surety Documents',
   'Identity Documents',
   'Address Documents',
   'Chit Documents',
@@ -92,33 +163,20 @@ const VALID_CATEGORIES = [
  */
 router.get('/customers', protect, staff, async (req, res) => {
   try {
-    const customers = await User.find({
-      where: {
-        role: 'user'
-      },
-      select: {
-        id: true,
-        memberId: true,
-        name: true,
-        phone: true,
-        email: true,
-        city: true,
-        state: true,
-        panNumber: true,
-        aadharNumber: true,
-        aadharImgUrl: true,
-        panImgUrl: true,
-        createdAt: true
-      },
-      orderBy: [
-        { memberId: 'asc' },
-        { name: 'asc' }
-      ]
-    });
+    const customers = await User.find({ role: 'user' })
+      .select('memberId name phone email city state panNumber aadharNumber aadharImgUrl panImgUrl createdAt')
+      .sort({ memberId: 1, name: 1 })
+      .lean();
+
+    const normalizedCustomers = customers.map(c => ({
+      ...c,
+      id: String(c._id),
+      _id: String(c._id)
+    }));
 
     res.json({
       success: true,
-      data: customers
+      data: normalizedCustomers
     });
   } catch (error) {
     console.error('Error fetching customers for documents:', error);
@@ -132,19 +190,59 @@ router.get('/customers', protect, staff, async (req, res) => {
  */
 router.get('/customer/:userId', protect, staff, async (req, res) => {
   try {
-    const { userId } = req.params;
+    let { userId } = req.params;
+    userId = decodeURIComponent(userId || '').trim();
 
-    const user = await User.findById(userId).select('memberId name phone email city state aadharImgUrl panImgUrl').lean();
+    let user = null;
+    // 1. Try finding by MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      user = await User.findById(userId).select('memberId name phone email city state aadharImgUrl panImgUrl createdAt').lean();
+    }
+    // 2. Try finding by memberId directly (e.g. "INA103")
+    if (!user) {
+      user = await User.findOne({ memberId: { $regex: new RegExp(`^${userId}$`, 'i') } })
+        .select('memberId name phone email city state aadharImgUrl panImgUrl createdAt')
+        .lean();
+    }
+    // 3. Fallback: If userId contains (INA...) extract memberId from string
+    if (!user) {
+      const match = userId.match(/INA\d+/i);
+      if (match) {
+        user = await User.findOne({ memberId: { $regex: new RegExp(`^${match[0]}$`, 'i') } })
+          .select('memberId name phone email city state aadharImgUrl panImgUrl createdAt')
+          .lean();
+      }
+    }
+    // 4. Fallback: Try finding by name match
+    if (!user) {
+      user = await User.findOne({ name: { $regex: new RegExp(`^${userId}$`, 'i') } })
+        .select('memberId name phone email city state aadharImgUrl panImgUrl createdAt')
+        .lean();
+    }
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'Customer not found' });
     }
 
-    const docs = await CustomerDocument.find({ userId }).sort({ createdAt: -1 }).lean();
+    const actualUserId = user._id;
+    const userObj = {
+      ...user,
+      id: String(user._id),
+      _id: String(user._id)
+    };
+
+    const docs = await CustomerDocument.find({ userId: actualUserId }).sort({ createdAt: -1 }).lean();
+
+    const normalizedDocs = docs.map(d => ({
+      ...d,
+      id: String(d._id),
+      _id: String(d._id)
+    }));
 
     // Structure into categorized buckets
     const categorized = {
       'KYC Documents': [],
+      'Surety Documents': [],
       'Identity Documents': [],
       'Address Documents': [],
       'Chit Documents': [],
@@ -152,7 +250,7 @@ router.get('/customer/:userId', protect, staff, async (req, res) => {
       'Other Documents': []
     };
 
-    docs.forEach(doc => {
+    normalizedDocs.forEach(doc => {
       const cat = doc.category || 'Other Documents';
       if (!categorized[cat]) {
         categorized[cat] = [];
@@ -164,10 +262,11 @@ router.get('/customer/:userId', protect, staff, async (req, res) => {
 
     // Automatically inject initial registration KYC docs if present and not duplicated
     if (user.aadharImgUrl) {
-      const hasAadhar = docs.some(d => d.title.toLowerCase().includes('aadhaar') || d.fileUrl === user.aadharImgUrl);
+      const hasAadhar = normalizedDocs.some(d => (d.title || '').toLowerCase().includes('aadhaar') || d.fileUrl === user.aadharImgUrl);
       const aadharDoc = {
-        id: `reg-aadhar-${user.id}`,
-        userId: user.id,
+        id: `reg-aadhar-${userObj.id}`,
+        _id: `reg-aadhar-${userObj.id}`,
+        userId: userObj.id,
         category: 'KYC Documents',
         title: 'Aadhaar Card (Registration KYC)',
         fileName: 'aadhaar_card.jpeg',
@@ -187,10 +286,11 @@ router.get('/customer/:userId', protect, staff, async (req, res) => {
     }
 
     if (user.panImgUrl) {
-      const hasPan = docs.some(d => d.title.toLowerCase().includes('pan') || d.fileUrl === user.panImgUrl);
+      const hasPan = normalizedDocs.some(d => (d.title || '').toLowerCase().includes('pan') || d.fileUrl === user.panImgUrl);
       const panDoc = {
-        id: `reg-pan-${user.id}`,
-        userId: user.id,
+        id: `reg-pan-${userObj.id}`,
+        _id: `reg-pan-${userObj.id}`,
+        userId: userObj.id,
         category: 'Identity Documents',
         title: 'PAN Card (Registration KYC)',
         fileName: 'pan_card.jpeg',
@@ -209,11 +309,11 @@ router.get('/customer/:userId', protect, staff, async (req, res) => {
       allDocs.push(panDoc);
     }
 
-    allDocs.push(...docs);
+    allDocs.push(...normalizedDocs);
 
     res.json({
       success: true,
-      customer: user,
+      customer: userObj,
       documents: allDocs,
       allDocuments: allDocs,
       categories: categorized,
@@ -247,21 +347,23 @@ router.post('/upload', protect, staff, handleUpload, async (req, res) => {
     const ext = path.extname(req.file.originalname).replace('.', '').toUpperCase();
     const fileType = ext === 'JPG' ? 'JPEG' : (ext || 'FILE');
     const fileSize = formatBytes(req.file.size);
-    const fileUrl = `/uploads/${req.file.filename}`;
+
+    // Save document to Cloudinary (or fallback to local disk)
+    const { fileUrl, filePublicId, storageType } = await uploadToCloudinary(req.file);
 
     const newDoc = await CustomerDocument.create({
-        userId,
-        category: resolvedCategory,
-        title: title.trim(),
-        fileName: req.file.originalname,
-        fileUrl,
-        filePublicId: req.file.filename,
-        fileType,
-        fileSize,
-        storageType: 'S3',
-        remarks: remarks?.trim() || '',
-        uploadedBy: req.user.name || 'Admin'
-      });
+      userId,
+      category: resolvedCategory,
+      title: title.trim(),
+      fileName: req.file.originalname,
+      fileUrl,
+      filePublicId,
+      fileType,
+      fileSize,
+      storageType,
+      remarks: remarks?.trim() || '',
+      uploadedBy: req.user.name || 'Admin'
+    });
 
     res.status(201).json({
       success: true,
@@ -393,19 +495,16 @@ router.put('/:id', protect, staff, handleUpload, async (req, res) => {
 
     if (req.file) {
       const ext = path.extname(req.file.originalname).replace('.', '').toUpperCase();
+      const { fileUrl, filePublicId, storageType } = await uploadToCloudinary(req.file);
       updateData.fileType = ext === 'JPG' ? 'JPEG' : (ext || 'FILE');
       updateData.fileSize = formatBytes(req.file.size);
       updateData.fileName = req.file.originalname;
-      updateData.fileUrl = `/uploads/${req.file.filename}`;
-      updateData.filePublicId = req.file.filename;
+      updateData.fileUrl = fileUrl;
+      updateData.filePublicId = filePublicId;
+      updateData.storageType = storageType;
 
-      // Remove old local file if present
-      if (existing.fileUrl && existing.fileUrl.startsWith('/uploads/')) {
-        const oldPath = path.join(__dirname, '..', existing.fileUrl);
-        try {
-          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-        } catch (e) {}
-      }
+      // Clean up previous Cloudinary / local file
+      await deleteCloudinaryDoc(existing.fileUrl, existing.filePublicId, existing.fileType);
     }
 
     const updated = await CustomerDocument.findByIdAndUpdate(id, updateData, { new: true });
@@ -469,13 +568,8 @@ router.delete('/:id', protect, staff, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Document not found' });
     }
 
-    // Remove local file
-    if (existing.fileUrl && existing.fileUrl.startsWith('/uploads/')) {
-      const filePath = path.join(__dirname, '..', existing.fileUrl);
-      try {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch (e) {}
-    }
+    // Remove file from Cloudinary or local disk
+    await deleteCloudinaryDoc(existing.fileUrl, existing.filePublicId, existing.fileType);
 
     await CustomerDocument.findByIdAndDelete(id);
 
@@ -503,6 +597,7 @@ router.get('/my-documents', protect, async (req, res) => {
 
     const categorized = {
       'KYC Documents': [],
+      'Surety Documents': [],
       'Identity Documents': [],
       'Address Documents': [],
       'Chit Documents': [],

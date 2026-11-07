@@ -1531,6 +1531,28 @@ const UserDetailedRecords = () => {
                       <div>Phone: {user.guarantorPhone || 'N/A'}</div>
                     </div>
                   )}
+
+                  <div style={{ marginTop: '0.5rem', paddingTop: '0.4rem', borderTop: '1px solid #f1f5f9' }}>
+                    <Link
+                      to={`/admin/documents?customer=${user._id || user.id}`}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        color: '#7c3aed',
+                        textDecoration: 'none',
+                        backgroundColor: '#f5f3ff',
+                        padding: '0.25rem 0.6rem',
+                        borderRadius: '6px',
+                        border: '1px solid #ddd6fe'
+                      }}
+                    >
+                      <ShieldCheck size={12} />
+                      <span>Manage Surety & Customer Documents</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>

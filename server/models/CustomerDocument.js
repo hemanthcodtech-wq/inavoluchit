@@ -9,7 +9,7 @@ const customerDocumentSchema = new mongoose.Schema({
   filePublicId: String,
   fileType: { type: String, default: 'JPEG' },
   fileSize: String,
-  storageType: { type: String, default: 'S3' },
+  storageType: { type: String, default: 'Cloudinary' },
   remarks: String,
   uploadedBy: { type: String, default: 'Admin' },
 }, { timestamps: true });

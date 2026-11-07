@@ -16,6 +16,7 @@ import {
 
 const CATEGORIES = [
   'KYC Documents',
+  'Surety Documents',
   'Other Documents'
 ];
 
@@ -23,6 +24,7 @@ const UserDocuments = () => {
   const { user, token, API_URL, SERVER_URL } = useAuth();
   const [categoriesData, setCategoriesData] = useState({
     'KYC Documents': [],
+    'Surety Documents': [],
     'Other Documents': []
   });
   const [customer, setCustomer] = useState(null);
@@ -37,7 +39,25 @@ const UserDocuments = () => {
     return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
+  const isSuretyDoc = (doc) => {
+    const cat = (doc.category || '').toLowerCase();
+    const title = (doc.title || '').toLowerCase();
+    return (
+      cat.includes('surety') ||
+      cat.includes('surity') ||
+      cat.includes('guarantor') ||
+      title.includes('surety') ||
+      title.includes('surity') ||
+      title.includes('guarantor') ||
+      title.includes('promissory') ||
+      title.includes('security') ||
+      title.includes('deed') ||
+      title.includes('bond')
+    );
+  };
+
   const isKycDoc = (doc) => {
+    if (isSuretyDoc(doc)) return false;
     const cat = (doc.category || '').toLowerCase();
     const title = (doc.title || '').toLowerCase();
     return (
@@ -62,6 +82,7 @@ const UserDocuments = () => {
 
     const baseCategorized = {
       'KYC Documents': [],
+      'Surety Documents': [],
       'Other Documents': []
     };
 
@@ -92,7 +113,11 @@ const UserDocuments = () => {
             }
 
             allServerDocs.forEach(doc => {
-              if (isKycDoc(doc)) {
+              if (isSuretyDoc(doc)) {
+                if (!baseCategorized['Surety Documents'].some(d => d.id === doc.id)) {
+                  baseCategorized['Surety Documents'].push(doc);
+                }
+              } else if (isKycDoc(doc)) {
                 if (!baseCategorized['KYC Documents'].some(d => d.id === doc.id)) {
                   baseCategorized['KYC Documents'].push(doc);
                 }
@@ -115,7 +140,11 @@ const UserDocuments = () => {
           if (stored) {
             const localDocs = JSON.parse(stored);
             localDocs.forEach(ld => {
-              if (isKycDoc(ld)) {
+              if (isSuretyDoc(ld)) {
+                if (!baseCategorized['Surety Documents'].some(d => d.id === ld.id)) {
+                  baseCategorized['Surety Documents'].push(ld);
+                }
+              } else if (isKycDoc(ld)) {
                 if (!baseCategorized['KYC Documents'].some(d => d.id === ld.id)) {
                   baseCategorized['KYC Documents'].push(ld);
                 }
@@ -453,7 +482,22 @@ const UserDocuments = () => {
                             }}>
                               {doc.fileType || 'FILE'}
                             </span>
-                            {doc.storageType && (
+                            {((doc.fileUrl && doc.fileUrl.includes('cloudinary.com')) || doc.storageType === 'Cloudinary') ? (
+                              <>
+                                <span>•</span>
+                                <span style={{
+                                  backgroundColor: '#ecfdf5',
+                                  color: '#047857',
+                                  border: '1px solid #a7f3d0',
+                                  padding: '0.1rem 0.35rem',
+                                  borderRadius: '4px',
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700
+                                }}>
+                                  Cloudinary
+                                </span>
+                              </>
+                            ) : doc.storageType ? (
                               <>
                                 <span>•</span>
                                 <span style={{
@@ -467,7 +511,7 @@ const UserDocuments = () => {
                                   {doc.storageType}
                                 </span>
                               </>
-                            )}
+                            ) : null}
                             {doc.fileSize && (
                               <>
                                 <span>•</span>
