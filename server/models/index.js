@@ -4,7 +4,6 @@ const ChitMember = require('./ChitMember');
 const Payment = require('./Payment');
 const Auction = require('./Auction');
 const ChitFreeze = require('./ChitFreeze');
-const AuditLog = require('./AuditLog');
 const CustomerDocument = require('./CustomerDocument');
 
 module.exports = {
@@ -14,6 +13,5 @@ module.exports = {
   Payment,
   Auction,
   ChitFreeze,
-  AuditLog,
   CustomerDocument
 };

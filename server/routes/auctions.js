@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
+const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, CustomerDocument } = require('../models');
 const { protect, staff, admin } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
 const { calculateBidAuctionResult } = require('../utils/auctionLogic');
-const { logAuditEvent } = require('../utils/auditLogger');
 
 
 const getFileUrl = (file) => {
@@ -197,16 +196,6 @@ router.post('/', protect, staff, upload.single('receipt'), async (req, res) => {
       await Chit.findByIdAndUpdate(chitId, { currentMonth: Number(monthNumber) + 1 });
     }
 
-    await logAuditEvent({
-      req,
-      module: 'auctions',
-      action: 'Auction Winner Recorded',
-      recordId: auction.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Winner: ${finalTicket || finalUserId}, Month ${monthNumber}, Auctioned Amount ₹${parsedAuctionAmount}`
-    });
-
     res.status(201).json({
       success: true,
       message: `Auction for Month ${monthNumber} recorded successfully!`,
@@ -230,16 +219,6 @@ router.delete('/:id', protect, admin, async (req, res) => {
     }
 
     await Auction.findByIdAndDelete(id);
-
-    await logAuditEvent({
-      req,
-      module: 'auctions',
-      action: 'Delete Auction Record',
-      recordId: auction.id,
-      result: 'Success',
-      severity: 'Warning',
-      details: `Deleted auction for Month ${auction.monthNumber}`
-    });
 
     res.json({ success: true, message: 'Auction record deleted successfully' });
   } catch (error) {

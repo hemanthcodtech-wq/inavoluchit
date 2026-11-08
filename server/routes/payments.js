@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
+const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, CustomerDocument } = require('../models');
 const { protect, admin, staff } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
-const { logAuditEvent } = require('../utils/auditLogger');
 const receiptPdfService = require('../utils/receiptPdfService');
 
 
@@ -259,16 +258,6 @@ router.post('/:id/verify', protect, staff, async (req, res) => {
         }
       }
 
-      await logAuditEvent({
-        req,
-        module: 'receipts',
-        action: 'Receipt Generated',
-        recordId: payment.id,
-        result: 'Success',
-        severity: 'Info',
-        details: `Approved payment of ₹${payment.amount}. Receipt saved in Cloudinary.`
-      });
-
       if (chit) {
         const approvedMembersCount = await ChitMember.countDocuments({ chitId: chit._id, status: 'approved' });
         const paymentsForMonth = await Payment.countDocuments({
@@ -285,15 +274,6 @@ router.post('/:id/verify', protect, staff, async (req, res) => {
         }
       }
     } else {
-      await logAuditEvent({
-        req,
-        module: 'payments',
-        action: 'Payment Proof Rejected',
-        recordId: payment.id,
-        result: 'Failed',
-        severity: 'Warning',
-        details: remarks ? `Remarks: ${remarks}` : 'Payment rejected by admin'
-      });
     }
 
     const finalPayment = await Payment.findById(payment.id);

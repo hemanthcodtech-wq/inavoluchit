@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
           }
         });
       } catch (err) {
-        console.error('Error recording logout audit log:', err);
+        console.error('Error during logout:', err);
       }
     }
     localStorage.removeItem('token');

@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
+const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, CustomerDocument } = require('../models');
 const { protect, admin, staff } = require('../middleware/authMiddleware');
-const { logAuditEvent } = require('../utils/auditLogger');
 const {
 
   calculateFixedMonthlyPayment,
@@ -179,16 +178,6 @@ router.post('/', protect, staff, async (req, res) => {
         endDate: parsedEndDate,
         createdBy: req.user.role === 'employee' ? req.user.id : null,
       });
-
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: 'Created Chit Scheme',
-      recordId: chit.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Created new chit scheme "${chit.name}" (Value: ₹${chit.chitValue}, Members: ${chit.totalMembers})`
-    });
 
     res.status(201).json({ success: true, data: chit });
 
@@ -373,16 +362,6 @@ router.put('/:id', protect, staff, async (req, res) => {
     await Chit.findByIdAndUpdate(req.params.id, updateData);
     const updatedChit = await populateChitDetails(await Chit.findById(req.params.id));
 
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: 'Update Chit Scheme',
-      recordId: updatedChit.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Updated scheme ${updatedChit.name}`
-    });
-
     res.json({ success: true, message: 'Chit updated successfully', data: updatedChit });
 
   } catch (error) {
@@ -506,16 +485,6 @@ router.post('/:id/approve-member', protect, staff, async (req, res) => {
 
     const finalChit = await populateChitDetails(await Chit.findById(chit._id || chit.id));
 
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: status === 'approved' ? 'Approve Chit Member' : 'Reject Chit Member',
-      recordId: chit.id,
-      result: 'Success',
-      severity: status === 'approved' ? 'Info' : 'Warning',
-      details: `${status === 'approved' ? 'Approved' : 'Rejected'} member request for user ID ${userId} in chit scheme "${chit.name}"`
-    });
-
     res.json({
       success: true,
       message: `Member ${status} successfully.${shouldActivate ? ' Chit is now active!' : ''}`,
@@ -611,16 +580,6 @@ router.post('/:id/add-member', protect, staff, async (req, res) => {
     }
 
     const updatedChit = await populateChitDetails(await Chit.findById(chit._id || chit.id));
-
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: 'Enroll Member Slots',
-      recordId: chit.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Enrolled ${totalSlotsRequested} slot(s) into chit scheme "${chit.name}"`
-    });
 
     res.json({ 
       success: true, 
@@ -818,16 +777,6 @@ router.delete('/:id', protect, staff, async (req, res) => {
     await ChitFreeze.deleteMany({ chitId: id });
     await Auction.deleteMany({ chitId: id });
     await Payment.deleteMany({ chitId: id });
-
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: 'Deleted Chit Scheme',
-      recordId: chit.id,
-      result: 'Success',
-      severity: 'Warning',
-      details: `Deleted scheme ${chit.name}`
-    });
 
     res.json({
       success: true,

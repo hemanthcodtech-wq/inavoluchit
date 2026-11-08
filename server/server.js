@@ -3,7 +3,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const { connectDB } = require('./config/db');
-const { AuditLog } = require('./models');
 const { seedSuperadmin } = require('./utils/seedAdmin');
 const { backfillMissingMemberIds } = require('./utils/memberIdHelper');
 
@@ -80,21 +79,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to the InaVolu ChitFund API Platform', status: 'online' });
 });
 
-const updateLegacyAuditLogs = async () => {
-  try {
-    await AuditLog.updateMany({ action: 'Delete Group Document' }, { action: 'Deleted Chit Scheme' });
-    await AuditLog.updateMany({ action: 'Create Chit Group' }, { action: 'Created Chit Scheme' });
-  } catch (err) {
-    console.error('Error updating legacy audit log action names:', err);
-  }
-};
-
-// Start Server after seeding and audit log migration
+// Start Server after seeding
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, '0.0.0.0', async () => {
   console.log(`Server running on port ${PORT}`);
   await seedSuperadmin();
-  await updateLegacyAuditLogs();
   await backfillMissingMemberIds();
 });

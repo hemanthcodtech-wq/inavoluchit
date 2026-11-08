@@ -2,10 +2,9 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { User, AuditLog } = require('../models');
+const { User } = require('../models');
 const { protect } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
-const { logAuditEvent } = require('../utils/auditLogger');
 const { generateNextMemberId } = require('../utils/memberIdHelper');
 
 const generateToken = (id) => {
@@ -282,19 +281,6 @@ router.post('/login', async (req, res) => {
       await User.findByIdAndUpdate(user.id, { isApproved: true });
     }
 
-    // Authentication successful
-    if (user.role === 'superadmin' || user.role === 'employee') {
-      await logAuditEvent({
-        userId: user.id,
-        userEmail: user.email,
-        userRole: user.role === 'superadmin' ? 'Super Admin' : 'Employee',
-        module: 'auth',
-        action: 'Login',
-        result: 'Success',
-        severity: 'Info'
-      });
-    }
-
     res.json({
       success: true,
       token: generateToken(user.id),
@@ -315,19 +301,10 @@ router.post('/login', async (req, res) => {
 });
 
 // @route   POST /api/auth/logout
-// @desc    Logout user and record audit log
+// @desc    Logout user
 // @access  Private
 router.post('/logout', protect, async (req, res) => {
   try {
-    if (req.user && (req.user.role === 'superadmin' || req.user.role === 'employee')) {
-      await logAuditEvent({
-        req,
-        module: 'auth',
-        action: 'Logout',
-        result: 'Success',
-        severity: 'Info'
-      });
-    }
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Error during logout:', error);
@@ -713,17 +690,6 @@ router.post('/reset-password', async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
 
     await User.findByIdAndUpdate(user.id, { password: hashedPassword, otp: null, otpExpires: null });
-
-    await logAuditEvent({
-      userId: user.id,
-      userEmail: user.email,
-      userRole: user.role === 'superadmin' ? 'Super Admin' : (user.role === 'employee' ? 'Employee' : 'User'),
-      module: 'auth',
-      action: 'Password Reset',
-      result: 'Success',
-      severity: 'Info',
-      details: `Password reset successfully via email OTP for ${user.name}`
-    });
 
     res.json({
       success: true,

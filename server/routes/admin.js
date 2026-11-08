@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
-const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
+const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, CustomerDocument } = require('../models');
 const { protect, admin, staff } = require('../middleware/authMiddleware');
 const { upload, isCloudinaryConfigured } = require('../config/cloudinary');
-const { logAuditEvent } = require('../utils/auditLogger');
 const { generateNextMemberId } = require('../utils/memberIdHelper');
 const receiptPdfService = require('../utils/receiptPdfService');
 
@@ -177,16 +176,6 @@ router.post(
           securityRemarks: securityRemarks || null,
         });
 
-      await logAuditEvent({
-        req,
-        module: 'members',
-        action: 'Manual User Registration',
-        recordId: newUser.id,
-        result: 'Success',
-        severity: 'Info',
-        details: `Admin created member "${newUser.name}" (Member ID: ${newUser.memberId}) with temporary password.`
-      });
-
       res.status(201).json({
         success: true,
         message: `Member "${newUser.name}" registered successfully with Member ID: ${newUser.memberId}!`,
@@ -252,16 +241,6 @@ router.post('/users/:id/revoke', protect, admin, async (req, res) => {
     }
     await User.findByIdAndUpdate(user._id || user.id, { isApproved: false });
 
-    await logAuditEvent({
-      req,
-      module: 'members',
-      action: 'User Approval Revoked',
-      recordId: user.id,
-      result: 'Success',
-      severity: 'Warning',
-      details: `Revoked approval for user ${user.name} (${user.email})`
-    });
-
     res.json({ success: true, message: `User ${user.name} approval revoked.` });
   } catch (error) {
     console.error('Error revoking user:', error);
@@ -307,16 +286,6 @@ router.delete('/users/:id', protect, admin, async (req, res) => {
       User.findByIdAndDelete(userId)
     ]);
 
-    await logAuditEvent({
-      req,
-      module: 'members',
-      action: 'Delete User Account',
-      recordId: user.id,
-      result: 'Success',
-      severity: 'Critical',
-      details: `Deleted member account: ${user.name} (${user.email})`
-    });
-
     res.json({ success: true, message: `User ${user.name} deleted successfully.` });
   } catch (error) {
     console.error('Error deleting user:', error);
@@ -353,16 +322,6 @@ router.post('/users/:id/verify', protect, admin, async (req, res) => {
           memberId: finalMemberId
         });
 
-      await logAuditEvent({
-        req,
-        module: 'members',
-        action: 'Approve User Registration',
-        recordId: user.id,
-        result: 'Success',
-        severity: 'Info',
-        details: `Approved user ${user.name} (${user.email}) with Member ID ${finalMemberId}`
-      });
-
       return res.json({ success: true, message: `User ${user.name} approved successfully with Member ID: ${finalMemberId}`, data: updatedUser });
     } else {
       // Delete the proofs from Cloudinary / local storage
@@ -376,16 +335,6 @@ router.post('/users/:id/verify', protect, admin, async (req, res) => {
       }
 
       await User.findByIdAndDelete(user.id);
-
-      await logAuditEvent({
-        req,
-        module: 'members',
-        action: 'Reject User Registration',
-        recordId: user.id,
-        result: 'Failed',
-        severity: 'Warning',
-        details: `Rejected user ${user.name} (${user.email})`
-      });
 
       return res.json({ success: true, message: `User ${user.name} registration rejected and record removed.` });
     }
@@ -420,16 +369,6 @@ router.put('/users/:id/member-id', protect, admin, async (req, res) => {
     }
 
     const updatedUser = await User.findByIdAndUpdate(id, { memberId: trimmedId }, { new: true });
-
-    await logAuditEvent({
-      req,
-      module: 'members',
-      action: 'Updated Member ID',
-      recordId: id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Updated Member ID to ${trimmedId} for ${updatedUser.name}`
-    });
 
     res.json({ success: true, message: `Member ID updated to ${trimmedId}`, data: updatedUser });
   } catch (error) {
@@ -520,16 +459,6 @@ router.put('/users/:id/edit', protect, admin, async (req, res) => {
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
 
-    await logAuditEvent({
-      req,
-      module: 'members',
-      action: 'Edited User Profile',
-      recordId: id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Admin edited profile for member "${updatedUser.name}" (${updatedUser.memberId || 'No Member ID'}). Fields updated: ${Object.keys(updateData).join(', ')}`
-    });
-
     res.json({ success: true, message: `User "${updatedUser.name}" updated successfully.`, data: updatedUser });
   } catch (error) {
     console.error('Error editing user:', error);
@@ -577,16 +506,6 @@ router.put(
 
       const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
 
-      await logAuditEvent({
-        req,
-        module: 'members',
-        action: 'Admin Updated User Documents',
-        recordId: user.id,
-        result: 'Success',
-        severity: 'Info',
-        details: `Updated documents for member ${user.name} (${user.email})`
-      });
-
       res.json({
         success: true,
         message: `Documents updated successfully for ${user.name}`,
@@ -633,16 +552,6 @@ router.delete('/users/:id/documents/:docType', protect, staff, async (req, res) 
     }
 
     const updatedUser = await User.findByIdAndUpdate(id, updateData, { new: true });
-
-    await logAuditEvent({
-      req,
-      module: 'members',
-      action: `Admin Deleted User ${docType.toUpperCase()} Document`,
-      recordId: user.id,
-      result: 'Success',
-      severity: 'Warning',
-      details: `Deleted ${docType.toUpperCase()} for member ${user.name} (${user.email})`
-    });
 
     res.json({
       success: true,
@@ -1007,16 +916,6 @@ router.post('/chits/:chitId/set-monthly-due', protect, staff, async (req, res) =
     }
 
     await chit.save();
-
-    await logAuditEvent({
-      req,
-      module: 'chit_groups',
-      action: 'Set Monthly Due',
-      recordId: chit.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `Configured Month ${mNum} payable due to ₹${amount} for chit "${chit.name}"`
-    });
 
     // Fetch all approved enrolled members for WhatsApp broadcast notification
     const enrolledMembersRaw = await ChitMember.find({ chitId: chit._id, status: 'approved' })
@@ -1429,16 +1328,6 @@ router.post('/chits/:chitId/mark-paid', protect, staff, upload.single('proof'), 
       console.error('Error generating/uploading receipt to Cloudinary:', receiptErr);
     }
 
-    await logAuditEvent({
-      req,
-      module: 'payments',
-      action: paymentId ? 'Update Member Payment' : 'Record Member Payment',
-      recordId: payment.id,
-      result: 'Success',
-      severity: 'Info',
-      details: `${paymentId ? 'Updated' : 'Recorded'} ₹${paidAmt} payment for ${user.name} (Chit: ${chit.name}, Month: ${mNum}). Remaining due: ₹${remainingDue}, Excess: ₹${excessAmount}. Receipt saved to Cloudinary.`
-    });
-
     res.json({
       success: true,
       message: `Payment of ₹${paidAmt.toLocaleString()} saved for ${user.name} (Month ${mNum}). Receipt generated & saved in Cloudinary!`,
@@ -1477,16 +1366,6 @@ router.delete('/payments/:id', protect, staff, async (req, res) => {
     }
 
     await Payment.findByIdAndDelete(payment._id);
-
-    await logAuditEvent({
-      req,
-      module: 'payments',
-      action: 'Delete Member Payment',
-      recordId: payment.id,
-      result: 'Success',
-      severity: 'Warning',
-      details: `Deleted payment of ₹${payment.amount} for user ID ${payment.userId} (Month ${payment.monthNumber})`
-    });
 
     res.json({ success: true, message: 'Payment record removed successfully.' });
   } catch (error) {
@@ -1588,15 +1467,6 @@ router.delete('/payments/:id', protect, staff, async (req, res) => {
     }
 
     await Payment.findByIdAndDelete(req.params.id);
-
-    logAuditEvent({
-      userId: req.user.id,
-      action: 'DELETE',
-      module: 'payments',
-      targetId: req.params.id,
-      details: `Deleted payment record ${req.params.id} (Amount: Rs.${payment.amount}, Month: ${payment.monthNumber})`,
-      severity: 'WARNING'
-    });
 
     res.json({ success: true, message: 'Payment record deleted successfully' });
   } catch (error) {
@@ -1752,113 +1622,6 @@ router.get('/frozen-months', protect, staff, async (req, res) => {
   } catch (error) {
     console.error('Error fetching frozen months:', error);
     res.status(500).json({ success: false, message: 'Server error fetching frozen months' });
-  }
-});
-
-// @route   POST /api/admin/audit-logs/page-view
-// @desc    Log tab navigation / page view event
-// @access  Private/Staff
-router.post('/audit-logs/page-view', protect, staff, async (req, res) => {
-  try {
-    const { tabName, module: modName } = req.body;
-    if (tabName) {
-      await logAuditEvent({
-        req,
-        module: modName || 'system',
-        action: `Accessed Tab: ${tabName}`,
-        result: 'Success',
-        severity: 'Info'
-      });
-    }
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error logging tab navigation:', error);
-    res.status(500).json({ success: false, message: 'Server error logging tab navigation' });
-  }
-});
-
-// @route   GET /api/admin/audit-logs
-// @desc    Fetch filtered audit logs
-// @access  Private/Staff
-router.get('/audit-logs', protect, staff, async (req, res) => {
-  try {
-    const { search, severity, module: modFilter } = req.query;
-
-    const where = {};
-
-    if (severity && severity !== 'All') {
-      where.severity = severity;
-    }
-
-    if (modFilter && modFilter !== 'All') {
-      if (modFilter === 'payments') {
-        where.module = { $in: ['payments', 'receipts'] };
-      } else if (modFilter === 'chit_groups') {
-        where.module = { $in: ['chit_groups', 'chits', 'chit_schemes'] };
-      } else {
-        where.module = modFilter;
-      }
-    }
-
-    if (search && search.trim() !== '') {
-      const q = search.trim();
-      where.$or = [
-        { userEmail: { $regex: q, $options: 'i' } },
-        { action: { $regex: q, $options: 'i' } },
-        { module: { $regex: q, $options: 'i' } },
-        { recordId: { $regex: q, $options: 'i' } },
-        { userRole: { $regex: q, $options: 'i' } }
-      ];
-    }
-
-    const rawLogs = await AuditLog.find(where).sort({ createdAt: -1 }).limit(100).lean();
-    const logs = rawLogs.map(l => ({ ...l, id: l._id.toString() }));
-
-    res.json({ success: true, data: logs });
-  } catch (error) {
-    console.error('Error fetching audit logs:', error);
-    res.status(500).json({ success: false, message: 'Server error fetching audit logs' });
-  }
-});
-
-// @route   GET /api/admin/audit-logs/export
-// @desc    Export audit logs as CSV
-// @access  Private/Staff
-router.get('/audit-logs/export', protect, staff, async (req, res) => {
-  try {
-    const rawLogs = await AuditLog.find().sort({ createdAt: -1 }).lean();
-    const logs = rawLogs.map(l => ({ ...l, id: l._id.toString() }));
-
-
-    let csvContent = 'DATE / TIME,USER,ROLE,MODULE,ACTION,RECORD,RESULT,SEVERITY\n';
-
-    logs.forEach((log) => {
-      const formattedDate = new Date(log.createdAt).toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-      const line = [
-        `"${formattedDate}"`,
-        `"${log.userEmail || ''}"`,
-        `"${log.userRole || ''}"`,
-        `"${log.module || ''}"`,
-        `"${log.action || ''}"`,
-        `"${log.recordId || ''}"`,
-        `"${log.result || ''}"`,
-        `"${log.severity || ''}"`
-      ].join(',');
-      csvContent += line + '\n';
-    });
-
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="audit_logs.csv"');
-    return res.status(200).send(csvContent);
-  } catch (error) {
-    console.error('Error exporting audit logs:', error);
-    res.status(500).json({ success: false, message: 'Server error exporting audit logs' });
   }
 });
 

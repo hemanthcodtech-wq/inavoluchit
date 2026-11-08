@@ -67,7 +67,6 @@ import AllUsers from './pages/admin/AllUsers';
 import EmployeeManager from './pages/admin/EmployeeManager';
 import PaymentHistory from './pages/admin/PaymentHistory';
 import AdminLogin from './pages/admin/AdminLogin';
-import AuditLog from './pages/admin/AuditLog';
 import AdminDocuments from './pages/admin/AdminDocuments';
 import ChitPlansManager from './pages/admin/ChitPlansManager';
 
@@ -78,74 +77,11 @@ const ChitDuesLedgerPage = React.lazy(() => import('./pages/admin/ChitDuesLedger
 
 // Layout containing Navbar and Sidebar (conditionally)
 const MainLayout = () => {
-  const { user, token, API_URL } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const isAuthPage = ['/staff-login', '/admin/login', '/admin'].includes(location.pathname);
   const isAdminOrStaff = user && (user.role === 'superadmin' || user.role === 'employee');
   const showNavbar = !isAuthPage && !isAdminOrStaff;
-  
-  React.useEffect(() => {
-    if (user && token && (user.role === 'superadmin' || user.role === 'employee')) {
-      const tabNameMap = {
-        '/': 'Overview',
-        '/admin/dashboard': 'Overview',
-        '/admin/overview': 'Overview',
-        '/admin/all-users': 'All Users',
-        '/admin/documents': 'Chit Documents',
-        '/admin/chit-plans': 'Chit Plans',
-        '/admin/chits': 'Chit Schemes',
-        '/admin/auctions': 'Auction',
-        '/admin/users': 'User Approvals',
-        '/admin/employees': 'Employee Management',
-        '/admin/chit-approvals': 'Chit Approvals',
-        '/admin/payments': 'Verify Payments',
-        '/admin/payment-history': 'Payment Records',
-        '/admin/records': 'System Records',
-        '/admin/audit-log': 'Audit Log',
-        '/profile': 'My Profile'
-      };
-
-      const moduleMap = {
-        '/': 'system',
-        '/admin/dashboard': 'system',
-        '/admin/overview': 'system',
-        '/admin/all-users': 'members',
-        '/admin/documents': 'members',
-        '/admin/chit-plans': 'chit_groups',
-        '/admin/chits': 'chit_groups',
-        '/admin/auctions': 'auctions',
-        '/admin/users': 'members',
-        '/admin/employees': 'members',
-        '/admin/chit-approvals': 'chit_groups',
-        '/admin/payments': 'payments',
-        '/admin/payment-history': 'payments',
-        '/admin/records': 'system',
-        '/admin/audit-log': 'system',
-        '/profile': 'auth'
-      };
-
-      let tabName = tabNameMap[location.pathname];
-      let currentModule = moduleMap[location.pathname];
-      if (!tabName && location.pathname.startsWith('/admin/chits/') && location.pathname.endsWith('/dues')) {
-        tabName = 'Chit Dues Ledger';
-        currentModule = 'chit_groups';
-      }
-
-      if (tabName) {
-        fetch(`${API_URL}/admin/audit-logs/page-view`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            tabName,
-            module: currentModule || 'system'
-          })
-        }).catch(() => {});
-      }
-    }
-  }, [location.pathname, user?.id, token]);
 
   const mainRef = React.useRef(null);
 
@@ -451,7 +387,6 @@ function App() {
                 <Route path="/admin/documents" element={<AdminDocuments />} />
                 <Route path="/admin/records/user/:userId" element={<UserDetailedRecords />} />
                 <Route path="/admin/records/user/:userId/:slug" element={<UserDetailedRecords />} />
-                <Route path="/admin/audit-log" element={<AuditLog />} />
               </Route>
 
 

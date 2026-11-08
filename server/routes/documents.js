@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, AuditLog, CustomerDocument } = require('../models');
+const { User, Chit, ChitMember, Payment, Auction, ChitFreeze, CustomerDocument } = require('../models');
 const { protect, staff } = require('../middleware/authMiddleware');
 const { cloudinary, isCloudinaryConfigured } = require('../config/cloudinary');
 
